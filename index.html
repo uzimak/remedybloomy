@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RemedyBloomy - Natural Remedies & Wellness</title>
+<meta name="description" content="Discover nature's healing power with RemedyBloomy's natural remedies, essential oils, and herbal teas.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<!-- Cloud Sync Module - Persists ALL admin settings across any browser/device -->
+<script>
+window.SITE_URL = 'https://remedybloomy.xo.je/';
+
+// ===== CLOUD SYNC =====
+// Uses JSONBin.io (free, no account needed for public bins).
+// HARDCODED_BIN_ID: once set, every browser opening this file reads/writes the SAME bin.
+// The admin sets this once via Settings → "Activate Cloud Sync" and it persists forever.
+window.CloudSync = (function() {
+  const LS_KEY     = 'rb_cloud_bin_id';
+  const API        = 'https://api.jsonbin.io/v3';
+  // ▼▼▼ This gets set permanently once you activate cloud sync from Admin → Settings ▼▼▼
+  const HARDCODED  = null; // e.g. '6856a1234abc...' after first activation
+
+  // Priority: hardcoded (baked into file) → URL ?bin= param → localStorage
+  function _fromUrl() {
+    try { return new URLSearchParams(window.location.search).get('bin') || null; } catch(e){ return null; }
+  }
+  let binId = HARDCODED || _fromUrl() || localStorage.getItem(LS_KEY) || null;
+  if (binId) localStorage.setItem(LS_KEY, binId);
+
+  async function _req(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json', 'X-Bin-Private': 'false' } };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const r = await fetch(API + path, opts);
+    if (!r.ok) throw new Error('CloudSync HTTP ' + r.status);
+    return r.json();
+  }
+
+  async function load() {
+    if (!binId) return null;
+    try {
+      const d = await _req('GET', '/b/' + binId + '/latest');
+      return d.record || null;
+    } catch(e) { return null; }
+  }
+
+  async function save(data) {
+    try {
+      if (!binId) {
+        const d = await _req('POST', '/b', data);
+        binId = d.metadata.id;
+        localStorage.setItem(LS_KEY, binId);
+      } else {
+        await _req('PUT', '/b/' + binId, data);
+      }
+      return true;
+    } catch(e) { return false; }
+  }
+
+  function getBinId()   { return binId; }
+  function isHardcoded(){ return !!HARDCODED; }
+
+  function getShareUrl() {
+    if (!binId) return null;
+    try {
+      const u = new URL(window.SITE_URL);
+      u.searchParams.set('bin', binId);
+      return u.toString();
+    } catch(e) { return window.SITE_URL + '?bin=' + binId; }
+  }
+
+  return { load, save, getBinId, isHardcoded, getShareUrl };
+})();
+</script>
+<script>
+// Pre-React: store hash so React can read it reliably after mount
+window._initHash = window.location.hash;
+// Clean ?bin= from the visible browser URL (it's already in localStorage; no need to show it)
+try {
+  const _u = new URL(window.location.href);
+  if (_u.searchParams.has('bin')) {
+    _u.searchParams.delete('bin');
+    window.history.replaceState(null, '', _u.toString());
+  }
+} catch(_) {}
+// Pre-React: detect unsubscribe token in URL (?unsubscribe=email or ?unsub=token)
+window._unsubEmail = (function(){
+  try {
+    const p = new URLSearchParams(window.location.search);
+    const e = p.get('unsubscribe') || p.get('unsub') || '';
+    // tokens are base64-encoded emails
+    if (!e) return '';
+    try { return atob(e); } catch(_){ return e; }
+  } catch(_){ return ''; }
+})();
+</script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Lato',sans-serif;overflow-x:hidden;background:linear-gradient(to bottom right,#fef3c7,#fafaf9,#d1fae5);min-height:100vh}
+.font-display{font-family:'Cormorant Garamond',serif}
+.glass{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.4)}
+.hover-lift{transition:transform .3s ease,box-shadow .3s ease}
+.hover-lift:hover{transform:translateY(-4px);box-shadow:0 12px 24px rgba(0,0,0,.12)}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,.4)}70%{box-shadow:0 0 0 10px rgba(37,211,102,0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(100px)}to{opacity:1;transform:translateX(0)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.fade-in-up{animation:fadeInUp .6s ease-out forwards}
+.scrollbar-hide::-webkit-scrollbar{display:none}
+.scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
+.container{max-width:1280px;margin:0 auto;padding:0 1rem}
+.btn{padding:.75rem 1.5rem;border-radius:9999px;font-weight:600;transition:all .3s ease;cursor:pointer;border:none;display:inline-flex;align-items:center;gap:.5rem;font-family:'Lato',sans-serif;font-size:.9rem}
+.btn-primary{background:#059669;color:white}
+.btn-primary:hover{background:#047857;transform:scale(1.05)}
+.btn-secondary{background:white;color:#059669;border:1px solid #d1d5db}
+.btn-secondary:hover{background:#f0fdf4}
+.btn-danger{background:#dc2626;color:white}
+.btn-danger:hover{background:#b91c1c}
+.badge{display:inline-flex;align-items:center;padding:.25rem .75rem;border-radius:9999px;font-size:.875rem;font-weight:600}
+.badge-featured{background:#f59e0b;color:white}
+.badge-rating{background:#fef3c7;color:#d97706}
+
+/* HEADER */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.4);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.header-content{display:flex;justify-content:space-between;align-items:center;padding:1rem 0}
+.logo{display:flex;align-items:center;gap:.75rem;cursor:pointer;user-select:none}
+.logo-text{font-family:'Cormorant Garamond',serif;font-size:1.875rem;font-weight:700;color:#064e3b}
+nav{display:flex;align-items:center;gap:1.5rem}
+nav button{background:none;border:none;font-weight:500;color:#4b5563;cursor:pointer;transition:color .2s;font-size:.9rem;padding:.25rem 0}
+nav button:hover,nav button.active{color:#059669}
+.cart-button{position:relative;padding:.5rem;background:none;border:none;border-radius:9999px;cursor:pointer;transition:background .2s}
+.cart-button:hover{background:#f0fdf4}
+.cart-badge{position:absolute;top:-.25rem;right:-.25rem;background:#d97706;color:white;font-size:.75rem;font-weight:700;width:1.25rem;height:1.25rem;border-radius:9999px;display:flex;align-items:center;justify-content:center}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#047857,#0f766e,#065f46);color:white;padding:4rem 2rem;border-radius:1.5rem;margin-bottom:3rem;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;right:-10%;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none}
+.hero::after{content:'';position:absolute;bottom:-30%;left:30%;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.04);pointer-events:none}
+.hero-content{position:relative;z-index:10;max-width:42rem}
+.hero h2{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:700;margin-bottom:1rem;line-height:1.2;text-shadow:0 2px 4px rgba(0,0,0,.1)}
+.hero p{font-size:1.25rem;color:#d1fae5;margin-bottom:2rem}
+
+/* PRODUCTS */
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-top:2rem}
+.product-card{background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.5);border-radius:1rem;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.product-image-container{position:relative;overflow:hidden;height:12rem;cursor:pointer}
+.product-image{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
+.product-card:hover .product-image{transform:scale(1.08)}
+.product-image-overlay{position:absolute;inset:0;background:rgba(4,120,87,.0);display:flex;align-items:center;justify-content:center;transition:background .3s}
+.product-image-container:hover .product-image-overlay{background:rgba(4,120,87,.35)}
+.product-image-overlay span{color:white;font-weight:700;font-size:.875rem;opacity:0;transform:translateY(8px);transition:all .3s;display:flex;align-items:center;gap:.375rem}
+.product-image-container:hover .product-image-overlay span{opacity:1;transform:translateY(0)}
+.favorite-button{position:absolute;top:.75rem;right:.75rem;padding:.5rem;background:white;border:none;border-radius:9999px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.1);transition:transform .2s;z-index:2}
+.favorite-button:hover{transform:scale(1.1)}
+.featured-badge{position:absolute;top:.75rem;left:.75rem;background:#f59e0b;color:white;padding:.25rem .75rem;border-radius:9999px;font-size:.75rem;font-weight:700;z-index:2}
+.product-info{padding:1.25rem}
+.product-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:.5rem}
+.product-name{font-family:'Cormorant Garamond',serif;font-size:1.125rem;font-weight:600;color:#111827}
+.product-category{font-size:.75rem;color:#059669;font-weight:500;margin-bottom:.5rem}
+.product-description{font-size:.875rem;color:#6b7280;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.product-footer{display:flex;justify-content:space-between;align-items:center}
+.product-price{font-size:1.25rem;font-weight:700;color:#059669}
+
+/* SEARCH & FILTER */
+.search-filter{background:rgba(255,255,255,.85);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.4);border-radius:1rem;padding:1.5rem;margin-bottom:2rem}
+.search-input-container{position:relative;flex:1}
+.search-icon{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:#9ca3af}
+.search-input{width:100%;padding:.75rem 1rem .75rem 3rem;border:1px solid #d1d5db;border-radius:.75rem;font-size:1rem;font-family:'Lato',sans-serif}
+.search-input:focus{outline:none;border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.1)}
+.category-buttons{display:flex;gap:.5rem;overflow-x:auto;padding-bottom:.5rem}
+.category-button{padding:.6rem 1.25rem;border-radius:.75rem;font-weight:500;white-space:nowrap;cursor:pointer;transition:all .2s;border:1px solid #d1d5db;background:white;font-size:.875rem}
+.category-button:hover{background:#f0fdf4}
+.category-button.active{background:#059669;color:white;border-color:#059669;box-shadow:0 4px 6px rgba(5,150,105,.2)}
+
+/* CART */
+.cart-overlay{position:fixed;inset:0;z-index:200;display:flex;justify-content:flex-end}
+.cart-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.cart-sidebar{position:relative;width:100%;max-width:28rem;background:white;box-shadow:-4px 0 24px rgba(0,0,0,.2);overflow-y:auto;max-height:100vh}
+.cart-header{position:sticky;top:0;background:white;border-bottom:1px solid #e5e7eb;padding:1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:10}
+.cart-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:700;color:#064e3b}
+.cart-content{padding:1.5rem}
+.cart-item{display:flex;gap:1rem;padding:1rem;background:#fafaf9;border-radius:.75rem;margin-bottom:1rem}
+.cart-item-image{width:4rem;height:4rem;object-fit:cover;border-radius:.5rem}
+.cart-item-info{flex:1}
+.cart-item-name{font-weight:500;color:#111827;margin-bottom:.25rem;font-size:.9rem}
+.cart-item-price{color:#059669;font-weight:600;font-size:.9rem}
+.quantity-controls{display:flex;align-items:center;gap:.5rem;margin-top:.5rem}
+.quantity-button{width:1.75rem;height:1.75rem;display:flex;align-items:center;justify-content:center;background:white;border:1px solid #d1d5db;border-radius:.25rem;cursor:pointer}
+.quantity-button:hover{background:#f9fafb}
+.quantity-display{width:2rem;text-align:center;font-weight:500}
+.remove-button{padding:.5rem;color:#ef4444;background:none;border:none;cursor:pointer;border-radius:.25rem}
+.remove-button:hover{background:#fee2e2}
+.cart-total{border-top:1px solid #e5e7eb;padding-top:1rem;margin-top:1rem}
+.cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.cart-total-label{font-size:1.125rem;font-weight:600;color:#111827}
+.cart-total-amount{font-size:1.5rem;font-weight:700;color:#059669}
+.checkout-button{width:100%;background:#059669;color:white;padding:.875rem;border:none;border-radius:.75rem;font-weight:700;font-size:1rem;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;font-family:'Lato',sans-serif}
+.checkout-button:hover{background:#047857}
+
+/* ADMIN */
+.admin-tabs{display:flex;gap:0;border-bottom:2px solid #e5e7eb;margin-bottom:2rem;overflow-x:auto;background:white;border-radius:1rem 1rem 0 0;padding:.25rem .25rem 0}
+.admin-tab{padding:.875rem 1.25rem;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-weight:600;font-size:.85rem;color:#6b7280;cursor:pointer;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:.4rem;border-radius:.5rem .5rem 0 0}
+.admin-tab:hover{color:#059669;background:#f0fdf4}
+.admin-tab.active{color:#059669;border-bottom-color:#059669;background:#f0fdf4}
+.admin-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem}
+.admin-table-container{background:white;border:1px solid #e5e7eb;border-radius:1rem;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.admin-table{width:100%;border-collapse:collapse}
+.admin-table thead{background:#047857;color:white}
+.admin-table th{padding:.875rem 1.25rem;text-align:left;font-weight:600;font-size:.875rem}
+.admin-table tbody tr{border-bottom:1px solid #e5e7eb;transition:background .2s}
+.admin-table tbody tr:hover{background:#f0fdf4}
+.admin-table td{padding:.875rem 1.25rem;font-size:.875rem}
+.admin-product-image{width:3.5rem;height:3.5rem;object-fit:cover;border-radius:.5rem}
+.action-button{padding:.5rem;border:none;background:none;cursor:pointer;border-radius:.5rem;transition:background .2s}
+.action-button.edit:hover{background:#dbeafe}
+.action-button.delete:hover{background:#fee2e2}
+
+/* SETTINGS */
+.settings-card{background:white;border:1px solid #e5e7eb;border-radius:1rem;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.settings-card h3{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:#064e3b;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.currency-toggle{display:flex;gap:0;background:#f3f4f6;border-radius:.75rem;padding:.25rem;width:fit-content}
+.currency-option{padding:.5rem 1.5rem;border:none;background:none;border-radius:.5rem;font-weight:600;cursor:pointer;transition:all .2s;font-size:.9rem;font-family:'Lato',sans-serif}
+.currency-option.active{background:#059669;color:white;box-shadow:0 2px 4px rgba(5,150,105,.3)}
+
+/* CATEGORIES */
+.category-tag{display:inline-flex;align-items:center;gap:.4rem;background:#ecfdf5;border:1px solid #6ee7b7;color:#065f46;padding:.3rem .7rem;border-radius:9999px;font-size:.8rem;font-weight:500;margin:.2rem}
+.category-tag button{background:none;border:none;cursor:pointer;color:#6b7280;padding:0;display:flex;transition:color .2s}
+.category-tag button:hover{color:#dc2626}
+.add-category-form{display:flex;gap:.75rem;margin-top:1rem}
+.add-category-input{flex:1;padding:.625rem 1rem;border:1px solid #d1d5db;border-radius:.75rem;font-size:.9rem;font-family:'Lato',sans-serif}
+.add-category-input:focus{outline:none;border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.1)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.55)}
+.modal-content{position:relative;background:white;border-radius:1rem;box-shadow:0 20px 40px rgba(0,0,0,.15);max-width:42rem;width:100%;max-height:90vh;overflow-y:auto}
+.modal-header{position:sticky;top:0;background:white;border-bottom:1px solid #e5e7eb;padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:10}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:#064e3b}
+.modal-body{padding:1.5rem}
+.form-group{margin-bottom:1.25rem}
+.form-label{display:block;font-size:.875rem;font-weight:600;color:#374151;margin-bottom:.4rem}
+.form-input,.form-select,.form-textarea{width:100%;padding:.7rem 1rem;border:1px solid #d1d5db;border-radius:.75rem;font-size:.9rem;font-family:'Lato',sans-serif}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:#059669;box-shadow:0 0 0 3px rgba(5,150,105,.1)}
+.form-checkbox-group{display:flex;align-items:center;margin-bottom:1.25rem}
+.form-checkbox{width:1.125rem;height:1.125rem;cursor:pointer;accent-color:#059669}
+.form-checkbox-label{margin-left:.625rem;font-size:.875rem;font-weight:600;color:#374151}
+.form-actions{display:flex;gap:1rem;padding-top:1rem}
+.image-preview{margin-top:.625rem;width:7rem;height:7rem;object-fit:cover;border-radius:.5rem}
+
+/* PRODUCT DETAIL MODAL */
+.detail-modal{max-width:56rem}
+.detail-image-wrap{position:relative;height:20rem;border-radius:.75rem;overflow:hidden;margin-bottom:1.5rem}
+.detail-image{width:100%;height:100%;object-fit:cover}
+.detail-section{margin-bottom:1.25rem}
+.detail-section h4{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:#064e3b;margin-bottom:.5rem;display:flex;align-items:center;gap:.375rem}
+.detail-section p{font-size:.9rem;color:#374151;line-height:1.7}
+.detail-tag{display:inline-block;background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;padding:.25rem .7rem;border-radius:9999px;font-size:.8rem;font-weight:500;margin:.2rem}
+.price-block{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1.25rem}
+
+/* BLOG */
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;margin-top:2rem}
+.blog-card{background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.5);border-radius:1rem;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .3s ease}
+.blog-card:hover{transform:translateY(-4px);box-shadow:0 12px 24px rgba(0,0,0,.12)}
+.blog-card-image{width:100%;height:190px;object-fit:cover}
+.blog-card-image-placeholder{width:100%;height:190px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);display:flex;align-items:center;justify-content:center}
+.blog-card-body{padding:1.25rem}
+.blog-card-date{font-size:.75rem;color:#9ca3af;margin-bottom:.5rem}
+.blog-card-title{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:700;color:#111827;margin-bottom:.5rem;line-height:1.3}
+.blog-card-excerpt{font-size:.875rem;color:#6b7280;line-height:1.6;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.read-more-link{display:inline-flex;align-items:center;gap:.375rem;color:#059669;font-weight:600;font-size:.875rem;background:none;border:none;cursor:pointer;padding:0;transition:gap .2s}
+.read-more-link:hover{gap:.625rem}
+
+/* VIDEOS */
+.videos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;margin-top:2rem}
+.video-card{background:white;border:1px solid #e5e7eb;border-radius:1rem;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .3s;cursor:pointer}
+.video-card:hover{transform:translateY(-4px);box-shadow:0 12px 24px rgba(0,0,0,.12)}
+.video-thumb-wrap{position:relative;height:180px;overflow:hidden;background:#111}
+.video-thumb{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.video-card:hover .video-thumb{transform:scale(1.05)}
+.video-thumb-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#064e3b,#047857)}
+.play-btn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.play-circle{width:56px;height:56px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.3);transition:transform .2s}
+.video-card:hover .play-circle{transform:scale(1.1)}
+.video-card-body{padding:1rem}
+.video-card-title{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:#111827;margin-bottom:.375rem}
+.video-card-desc{font-size:.825rem;color:#6b7280;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.video-modal-content{max-width:56rem}
+.video-player-wrap{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:.75rem;background:#000;margin-bottom:1rem}
+.video-player-wrap iframe,.video-player-wrap video{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+
+/* TESTIMONIALS */
+.testimonials-section{background:linear-gradient(135deg,#f0fdf4,#fef3c7);border-radius:1.5rem;padding:3rem 2rem;margin:3rem 0}
+.testimonials-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-top:1.5rem}
+.testimonial-card{background:white;border-radius:1rem;padding:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,.07);position:relative}
+.testimonial-card::before{content:'"';position:absolute;top:.75rem;right:1rem;font-size:4rem;color:#d1fae5;font-family:'Cormorant Garamond',serif;line-height:1}
+.testimonial-text{font-size:.9rem;color:#374151;line-height:1.7;margin-bottom:1rem;font-style:italic}
+.testimonial-stars{display:flex;gap:.125rem;margin-bottom:.75rem}
+.testimonial-author{display:flex;align-items:center;gap:.75rem}
+.testimonial-avatar{width:2.75rem;height:2.75rem;border-radius:9999px;object-fit:cover;background:#d1fae5;display:flex;align-items:center;justify-content:center;font-weight:700;color:#059669;font-size:1rem;flex-shrink:0}
+.testimonial-name{font-weight:700;color:#111827;font-size:.875rem}
+.testimonial-location{font-size:.75rem;color:#6b7280}
+
+/* NEWSLETTER */
+.newsletter-section{background:linear-gradient(135deg,#047857,#065f46);color:white;border-radius:1.5rem;padding:3rem 2rem;margin:3rem 0;text-align:center}
+.newsletter-section h3{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:700;margin-bottom:.75rem}
+.newsletter-section p{color:#d1fae5;margin-bottom:1.5rem;font-size:1rem}
+.newsletter-form{display:flex;gap:.75rem;max-width:28rem;margin:0 auto;flex-wrap:wrap;justify-content:center}
+.newsletter-input{flex:1;min-width:200px;padding:.875rem 1.25rem;border:none;border-radius:9999px;font-size:.9rem;font-family:'Lato',sans-serif;outline:none}
+.newsletter-input:focus{box-shadow:0 0 0 3px rgba(255,255,255,.3)}
+.newsletter-btn{padding:.875rem 1.75rem;background:#f59e0b;color:white;border:none;border-radius:9999px;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif;transition:background .2s}
+.newsletter-btn:hover{background:#d97706}
+
+/* FOOTER */
+footer{background:#064e3b;color:white;margin-top:4rem}
+.footer-top{padding:3rem 0 2rem;border-bottom:1px solid rgba(255,255,255,.1)}
+.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:2rem}
+.footer-brand .logo-text{color:white;font-size:1.5rem}
+.footer-brand p{color:#a7f3d0;font-size:.875rem;margin-top:.75rem;line-height:1.6}
+.footer-social{display:flex;gap:.75rem;margin-top:1rem}
+.social-icon{width:2.25rem;height:2.25rem;border-radius:9999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s;text-decoration:none;color:white}
+.social-icon:hover{background:rgba(255,255,255,.2)}
+.footer-col h4{font-weight:700;font-size:.9rem;margin-bottom:1rem;color:#a7f3d0;text-transform:uppercase;letter-spacing:.05em}
+.footer-contact-item{display:flex;align-items:flex-start;gap:.625rem;margin-bottom:.75rem;font-size:.875rem;color:#d1fae5}
+.footer-contact-item a{color:#d1fae5;text-decoration:none}
+.footer-contact-item a:hover{color:white}
+.footer-bottom{padding:1.25rem 0;text-align:center;font-size:.8rem;color:rgba(255,255,255,.4)}
+.footer-secret{opacity:0;font-size:.5rem;cursor:default;user-select:none;transition:opacity 2s}
+.footer-secret:hover{opacity:.3}
+
+/* LIVE CHAT */
+.chat-fab{position:fixed;bottom:1.5rem;right:1.5rem;z-index:400;display:flex;flex-direction:column;align-items:flex-end;gap:.75rem}
+.chat-btn{width:3.5rem;height:3.5rem;border-radius:9999px;background:#25d366;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(37,211,102,.4);animation:pulse 2s infinite;transition:transform .2s}
+.chat-btn:hover{transform:scale(1.1)}
+.chat-panel{background:white;border-radius:1rem;width:320px;box-shadow:0 8px 32px rgba(0,0,0,.15);animation:slideIn .3s ease;overflow:hidden}
+.chat-panel-header{background:linear-gradient(135deg,#25d366,#128c7e);color:white;padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem}
+.chat-panel-body{padding:1rem;max-height:300px;overflow-y:auto}
+.chat-bubble{background:#f0fdf4;border-radius:.875rem .875rem .875rem 0;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.875rem;color:#1f2937;line-height:1.5}
+.chat-bubble.user{background:#dcfce7;border-radius:.875rem .875rem 0 .875rem;text-align:right;margin-left:2rem}
+.chat-bubble.bot{margin-right:2rem}
+.chat-quick-replies{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem}
+.quick-reply-btn{padding:.4rem .875rem;background:white;border:1.5px solid #059669;border-radius:9999px;color:#059669;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Lato',sans-serif}
+.quick-reply-btn:hover{background:#059669;color:white}
+.chat-panel-footer{padding:1rem;border-top:1px solid #e5e7eb}
+.whatsapp-chat-btn{width:100%;padding:.75rem;background:#25d366;color:white;border:none;border-radius:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.5rem;font-family:'Lato',sans-serif;font-size:.875rem;transition:background .2s}
+.whatsapp-chat-btn:hover{background:#128c7e}
+
+/* ADMIN LOGIN */
+.admin-login-modal{max-width:24rem}
+.admin-login-logo{text-align:center;margin-bottom:1.5rem}
+.admin-login-form{padding:0}
+
+/* NOTIFICATION */
+.toast{position:fixed;bottom:5rem;right:1.5rem;background:#064e3b;color:white;padding:.875rem 1.25rem;border-radius:.75rem;font-size:.875rem;font-weight:500;z-index:500;animation:fadeInUp .3s ease;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+
+/* BLOG READ MORE */
+.blog-full-image{width:100%;height:280px;object-fit:cover;border-radius:.75rem;margin-bottom:1.5rem}
+.blog-full-content{font-size:.95rem;color:#374151;line-height:1.85;white-space:pre-wrap}
+
+/* ADMIN DASHBOARD STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:2rem}
+.stat-card{background:white;border:1px solid #e5e7eb;border-radius:1rem;padding:1.25rem;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.stat-number{font-family:'Cormorant Garamond',serif;font-size:2.25rem;font-weight:700;color:#059669}
+.stat-label{font-size:.8rem;color:#6b7280;font-weight:600;margin-top:.25rem;text-transform:uppercase;letter-spacing:.05em}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .logo-text{font-size:1.5rem}
+  .hero h2{font-size:2rem}
+  .hero p{font-size:1rem}
+  nav{display:none}
+  .admin-table-container{overflow-x:auto}
+  .admin-table{min-width:700px}
+  .chat-panel{width:280px}
+  .footer-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .products-grid,.blog-grid,.videos-grid{grid-template-columns:1fr}
+  .newsletter-form{flex-direction:column}
+  .newsletter-input{width:100%;min-width:unset}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ===== INITIAL DATA =====
+const USD_TO_KES = 129.5;
+
+const initProducts = [
+  {id:1,name:"Lavender Essential Oil",category:"Essential Oils",price:24.99,image:"https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&h=400&fit=crop",description:"Pure lavender oil for relaxation and aromatherapy",featured:true,rating:4.8,uses:"Add 5-10 drops to a diffuser. Dilute with carrier oil for topical use. Add to warm bath for relaxation.",diseasesTreated:"Anxiety, Insomnia, Stress, Headaches, Minor Burns, Skin Irritation"},
+  {id:2,name:"Chamomile Tea Blend",category:"Herbal Teas",price:15.99,image:"https://images.unsplash.com/photo-1594631252845-29fc4cc8cde9?w=600&h=400&fit=crop",description:"Calming chamomile tea for better sleep",featured:true,rating:4.9,uses:"Steep 1 teabag or 1 tsp dried flowers in hot water for 5-10 minutes. Drink 30 minutes before bed.",diseasesTreated:"Insomnia, IBS, Anxiety, Stomach Cramps, Inflammation"},
+  {id:3,name:"Eucalyptus Oil",category:"Essential Oils",price:19.99,image:"https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&h=400&fit=crop",description:"Respiratory support and natural decongestant",featured:false,rating:4.7,uses:"Inhale directly or add to steam inhalation. Dilute and apply to chest for congestion.",diseasesTreated:"Congestion, Cold, Flu, Sinusitis, Respiratory Issues"},
+  {id:4,name:"Turmeric Root Powder",category:"Superfoods",price:12.99,image:"https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=600&h=400&fit=crop",description:"Anti-inflammatory golden spice",featured:true,rating:4.6,uses:"Add to golden milk, smoothies, soups or curries. Take ½-1 tsp daily with black pepper for best absorption.",diseasesTreated:"Arthritis, Inflammation, Digestive Issues, Joint Pain, Liver Support"},
+  {id:5,name:"Peppermint Tea",category:"Herbal Teas",price:13.99,image:"https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=600&h=400&fit=crop",description:"Digestive support and refreshing flavor",featured:false,rating:4.8,uses:"Brew 1 teabag in hot water for 5 minutes. Drink after meals for digestion support.",diseasesTreated:"IBS, Nausea, Bloating, Headaches, Bad Breath, Fatigue"},
+  {id:6,name:"Manuka Honey",category:"Superfoods",price:34.99,image:"https://images.unsplash.com/photo-1587049352846-4a222e784e38?w=600&h=400&fit=crop",description:"Premium antibacterial honey from New Zealand",featured:true,rating:5.0,uses:"Take 1-2 teaspoons daily. Apply topically to wounds. Add to warm (not hot) drinks.",diseasesTreated:"Wounds, Sore Throat, Gastric Ulcers, Skin Infections, Immune Support"}
+];
+
+const initCategories = ["Essential Oils","Herbal Teas","Superfoods","Supplements","Skin Care","Other"];
+
+const initBlogs = [
+  {id:1,title:"The Healing Power of Lavender: A Complete Guide",excerpt:"Lavender has been used for centuries across cultures for its remarkable calming and healing properties. Discover how this versatile herb can transform your wellness routine.",content:"Lavender has been used for centuries across cultures for its remarkable calming and healing properties. From ancient Egyptian embalming rituals to Roman bathing traditions, lavender has always held a place of honor in natural medicine.\n\nThe essential oil extracted from lavender flowers contains over 150 active constituents, with linalool and linalyl acetate being the primary therapeutic compounds.\n\nHow to Use Lavender:\n\n1. Aromatherapy: Add 5-10 drops to a diffuser before bedtime to improve sleep quality.\n2. Topical application: Dilute with a carrier oil and apply to pulse points for stress relief.\n3. Bath soak: Add 10 drops to warm bathwater for a deeply relaxing experience.\n4. Wound care: Apply diluted lavender oil to minor cuts and burns to speed healing.\n\nResearch continues to validate what traditional practitioners have known for centuries — lavender is truly one of nature's most versatile healers.",image:"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop",date:"2025-03-01",author:"RemedyBloomy Team"},
+  {id:2,title:"5 Herbal Teas for Better Sleep Tonight",excerpt:"Struggling with sleepless nights? Nature has provided us with powerful botanical allies that can help calm a restless mind and ease you into deep, restorative sleep.",content:"Sleep is one of the most critical pillars of health, yet millions of people struggle to get quality rest each night. Before reaching for pharmaceutical sleep aids, consider these five powerful herbal teas.\n\n1. Chamomile — The classic bedtime brew. Contains apigenin, an antioxidant that binds to brain receptors to promote drowsiness.\n\n2. Valerian Root — Often called nature's Valium. Increases GABA levels in the brain, producing a calming effect.\n\n3. Passionflower — This beautiful vine produces tea that rivals pharmaceutical sleep aids in some studies, without the dependency risk.\n\n4. Lemon Balm — A member of the mint family, lemon balm reduces anxiety and restlessness.\n\n5. Lavender Tea — Sipping lavender tea an hour before bed signals your nervous system to begin winding down.\n\nFor best results, brew your chosen tea 45-60 minutes before bedtime and create a calming ritual around it.",image:"https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=800&h=400&fit=crop",date:"2025-02-15",author:"RemedyBloomy Team"}
+];
+
+const initVideos = [
+  {id:1,title:"Introduction to Essential Oils",description:"Learn the basics of essential oils, how they work, and how to safely incorporate them into your daily wellness routine.",url:"https://www.youtube.com/watch?v=5MgBikgcWnY",featured:true,date:"2025-02-10"},
+  {id:2,title:"Morning Herbal Tea Ritual",description:"Start your day right with this calming herbal tea preparation guide featuring our best-selling chamomile and peppermint blends.",url:"https://www.youtube.com/watch?v=9OPP_1eWVFc",featured:false,date:"2025-01-28"}
+];
+
+const initTestimonials = [
+  {id:1,name:"Sarah K.",location:"Nairobi, Kenya",rating:5,text:"The lavender essential oil completely transformed my sleep. I've been using it for 3 months and I can't imagine going back. Absolutely worth every shilling!",photo:"",date:"2025-02-20"},
+  {id:2,name:"James M.",location:"Mombasa, Kenya",rating:5,text:"I was skeptical at first, but the chamomile tea blend has genuinely helped my anxiety. I now recommend RemedyBloomy to everyone in my family.",photo:"",date:"2025-02-01"},
+  {id:3,name:"Amina H.",location:"Kisumu, Kenya",rating:4,text:"Excellent products and very fast delivery. The turmeric powder is of amazing quality. My joint pain has reduced significantly over the past few weeks.",photo:"",date:"2025-01-15"}
+];
+
+const defaultSettings = {
+  currency:'USD',
+  paymentLink:'',
+  adminPassword:'admin123',
+  social:{facebook:'',instagram:'',twitter:'',youtube:'',whatsapp:'',tiktok:''},
+  contact:{phone:'',email:'',address:''},
+  chat:{enabled:true,greeting:"Hi! Welcome to RemedyBloomy 🌿 How can we help you today?"},
+  newsletter:{enabled:true,title:"Join Our Wellness Community",description:"Get exclusive tips, herbal recipes, and special offers straight to your inbox."},
+  apiKeys:{anthropicKey:'',ejsServiceId:'',ejsTemplateId:'',ejsPublicKey:''}
+};
+
+// ===== UTILITIES =====
+function extractVideo(url) {
+  if (!url) return null;
+  // YouTube: use youtube-nocookie.com to avoid Error 153 (player config restriction)
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) return {
+    type:'youtube',
+    videoId: yt[1],
+    embedUrl:`https://www.youtube-nocookie.com/embed/${yt[1]}?rel=0&modestbranding=1&enablejsapi=1`,
+    watchUrl:`https://www.youtube.com/watch?v=${yt[1]}`,
+    thumb:`https://img.youtube.com/vi/${yt[1]}/hqdefault.jpg`
+  };
+  const vi = url.match(/vimeo\.com\/(\d+)/);
+  if (vi) return {type:'vimeo',embedUrl:`https://player.vimeo.com/video/${vi[1]}?dnt=1`,watchUrl:`https://vimeo.com/${vi[1]}`,thumb:null};
+  if (/\.(mp4|webm|ogg)$/i.test(url)) return {type:'direct',src:url,thumb:null};
+  return null;
+}
+
+function formatDate(d) {
+  try { return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); } catch(e){return d;}
+}
+
+// ===== ICON =====
+const Icon = ({name,style={},className=''}) => {
+  React.useEffect(()=>{ if(window.lucide) lucide.createIcons(); });
+  return React.createElement('i',{'data-lucide':name,style,className});
+};
+
+// ===== APP =====
+function App() {
+  const [products,setProducts] = React.useState([]);
+  const [categories,setCategories] = React.useState(initCategories);
+  const [blogs,setBlogs] = React.useState([]);
+  const [videos,setVideos] = React.useState([]);
+  const [testimonials,setTestimonials] = React.useState([]);
+  const [subscribers,setSubscribers] = React.useState([]);
+  const [settings,setSettings] = React.useState(defaultSettings);
+
+  const [cart,setCart] = React.useState([]);
+  const [favorites,setFavorites] = React.useState([]);
+  const [selectedCategory,setSelectedCategory] = React.useState('All');
+  const [searchQuery,setSearchQuery] = React.useState('');
+
+  const [isAdmin,setIsAdmin] = React.useState(false);
+  const [showAdminLogin,setShowAdminLogin] = React.useState(false);
+  const [showCart,setShowCart] = React.useState(false);
+  const [showMenu,setShowMenu] = React.useState(false);
+  const [editingProduct,setEditingProduct] = React.useState(null);
+  const [showProductForm,setShowProductForm] = React.useState(false);
+  const [readingBlog,setReadingBlog] = React.useState(null);
+  const [viewingProduct,setViewingProduct] = React.useState(null);
+  const [playingVideo,setPlayingVideo] = React.useState(null);
+  const [activeView,setActiveView] = React.useState('shop');
+  const [toast,setToast] = React.useState('');
+  const [logoClicks,setLogoClicks] = React.useState(0);
+
+  // Load: localStorage first (instant), then cloud override (cross-browser persistence)
+  React.useEffect(()=>{
+    const ls = (k,fb) => { try { const v=localStorage.getItem(k); return v?JSON.parse(v):fb; } catch(e){return fb;} };
+    setProducts(ls('rb_products',initProducts));
+    setCategories(ls('rb_categories',initCategories));
+    setBlogs(ls('rb_blogs',initBlogs));
+    setVideos(ls('rb_videos',initVideos));
+    setTestimonials(ls('rb_testimonials',initTestimonials));
+    setSubscribers(ls('rb_subscribers',[]));
+    const lsSet = ls('rb_settings',{});
+    setSettings(()=>({...defaultSettings,...lsSet,social:{...defaultSettings.social,...(lsSet.social||{})},contact:{...defaultSettings.contact,...(lsSet.contact||{})},chat:{...defaultSettings.chat,...(lsSet.chat||{})},newsletter:{...defaultSettings.newsletter,...(lsSet.newsletter||{})},apiKeys:{...defaultSettings.apiKeys,...(lsSet.apiKeys||{})}}));
+    setCart(ls('rb_cart',[]));
+    setFavorites(ls('rb_favorites',[]));
+    // Pull cloud data and override with persisted admin changes
+    window.CloudSync.load().then(cloud=>{
+      if(!cloud) return;
+      if(cloud.products&&cloud.products.length){setProducts(cloud.products);localStorage.setItem('rb_products',JSON.stringify(cloud.products));}
+      if(cloud.categories&&cloud.categories.length){setCategories(cloud.categories);localStorage.setItem('rb_categories',JSON.stringify(cloud.categories));}
+      if(cloud.blogs){setBlogs(cloud.blogs);localStorage.setItem('rb_blogs',JSON.stringify(cloud.blogs));}
+      if(cloud.videos){setVideos(cloud.videos);localStorage.setItem('rb_videos',JSON.stringify(cloud.videos));}
+      if(cloud.testimonials){setTestimonials(cloud.testimonials);localStorage.setItem('rb_testimonials',JSON.stringify(cloud.testimonials));}
+      if(cloud.subscribers){setSubscribers(cloud.subscribers);localStorage.setItem('rb_subscribers',JSON.stringify(cloud.subscribers));}
+      if(cloud.settings){
+        const cs=cloud.settings;
+        const merged={...defaultSettings,...cs,social:{...defaultSettings.social,...(cs.social||{})},contact:{...defaultSettings.contact,...(cs.contact||{})},chat:{...defaultSettings.chat,...(cs.chat||{})},newsletter:{...defaultSettings.newsletter,...(cs.newsletter||{})},apiKeys:{...defaultSettings.apiKeys,...(cs.apiKeys||{})}};
+        setSettings(merged);localStorage.setItem('rb_settings',JSON.stringify(merged));
+      }
+    }).catch(()=>{});
+    // Handle one-click unsubscribe from email link (?unsubscribe=base64email)
+    const unsubTarget = window._unsubEmail || '';
+    if (unsubTarget) {
+      window._unsubEmail = ''; // clear so it doesn't run again
+      // We need to wait for subscribers to load first, so store it and handle in a ref
+      window._pendingUnsub = unsubTarget;
+    }
+  },[]);
+
+  // Process pending one-click unsubscribe once subscribers are loaded from cloud
+  React.useEffect(()=>{
+    const target = window._pendingUnsub;
+    if (!target || !subscribers.length) return;
+    window._pendingUnsub = '';
+    const found = subscribers.find(s => s.email.toLowerCase() === target.toLowerCase());
+    if (found) {
+      unsubscribe(target);
+      setActiveView('shop');
+      // Clean ?unsubscribe= from URL (leave other params intact)
+      try {
+        const u = new URL(window.location.href);
+        u.searchParams.delete('unsubscribe');
+        u.searchParams.delete('unsub');
+        // Also remove ?bin= for clean display (it's stored in localStorage)
+        u.searchParams.delete('bin');
+        window.history.replaceState(null, '', u.toString());
+      } catch(_){}
+      setTimeout(()=>showToast('✅ You have been unsubscribed successfully.'), 500);
+    }
+  },[subscribers]);
+
+  // ── Refs to always-current state (avoids stale closure in pushCloud) ──
+  const stateRef = React.useRef({});
+  stateRef.current = {products,categories,blogs,videos,testimonials,subscribers,settings};
+
+  // Save to localStorage on every change (instant restore on same browser)
+  React.useEffect(()=>{ if(products.length) localStorage.setItem('rb_products',JSON.stringify(products)); },[products]);
+  React.useEffect(()=>{ localStorage.setItem('rb_categories',JSON.stringify(categories)); },[categories]);
+  React.useEffect(()=>{ localStorage.setItem('rb_blogs',JSON.stringify(blogs)); },[blogs]);
+  React.useEffect(()=>{ localStorage.setItem('rb_videos',JSON.stringify(videos)); },[videos]);
+  React.useEffect(()=>{ localStorage.setItem('rb_testimonials',JSON.stringify(testimonials)); },[testimonials]);
+  React.useEffect(()=>{ localStorage.setItem('rb_subscribers',JSON.stringify(subscribers)); },[subscribers]);
+  React.useEffect(()=>{ localStorage.setItem('rb_settings',JSON.stringify(settings)); },[settings]);
+  React.useEffect(()=>{ localStorage.setItem('rb_cart',JSON.stringify(cart)); },[cart]);
+  React.useEffect(()=>{ localStorage.setItem('rb_favorites',JSON.stringify(favorites)); },[favorites]);
+
+  // pushCloud: called explicitly by admin Save buttons → always uses latest state via ref
+  const cloudTimerRef = React.useRef(null);
+  const pushCloud = React.useCallback((overrideSettings)=>{
+    if(cloudTimerRef.current) clearTimeout(cloudTimerRef.current);
+    cloudTimerRef.current = setTimeout(()=>{
+      const s = stateRef.current;
+      const snap = {
+        products: s.products,
+        categories: s.categories,
+        blogs: s.blogs,
+        videos: s.videos,
+        testimonials: s.testimonials,
+        subscribers: s.subscribers,
+        settings: overrideSettings || s.settings
+      };
+      window.CloudSync.save(snap).catch(()=>{});
+    }, 400); // short debounce so rapid saves coalesce
+  },[]);
+
+  // Secret admin via URL hash
+  React.useEffect(()=>{
+    const isAdminHash = (h) => h === '#admin' || h === '#/admin';
+    const check = () => {
+      if(isAdminHash(window.location.hash) && !isAdmin) {
+        setShowAdminLogin(true);
+      }
+    };
+    // Check both the live hash and the pre-React captured hash (handles direct URL load)
+    if((isAdminHash(window.location.hash) || isAdminHash(window._initHash||'')) && !isAdmin) {
+      setShowAdminLogin(true);
+      window._initHash = ''; // clear so it doesn't retrigger
+    }
+    window.addEventListener('hashchange', check);
+    return ()=>window.removeEventListener('hashchange',check);
+  },[isAdmin]);
+
+  // Logo triple-click secret
+  const handleLogoClick = () => {
+    const n = logoClicks+1;
+    setLogoClicks(n);
+    if(n>=3){setLogoClicks(0);if(!isAdmin)setShowAdminLogin(true);}
+    setTimeout(()=>setLogoClicks(0),1500);
+  };
+
+  const showToast = (msg) => { setToast(msg); setTimeout(()=>setToast(''),2800); };
+
+  const fp = (usd) => settings.currency==='KES'
+    ? `KES ${Math.round(usd*USD_TO_KES).toLocaleString()}`
+    : `$${parseFloat(usd).toFixed(2)}`;
+  const fpAlt = (usd) => settings.currency==='KES'
+    ? `$${parseFloat(usd).toFixed(2)}`
+    : `KES ${Math.round(usd*USD_TO_KES).toLocaleString()}`;
+
+  const allCats = ['All',...categories];
+  const filtered = products.filter(p=>{
+    const mc = selectedCategory==='All'||p.category===selectedCategory;
+    const ms = p.name.toLowerCase().includes(searchQuery.toLowerCase())||p.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return mc&&ms;
+  });
+  const featured = products.filter(p=>p.featured);
+  const cartTotal = cart.reduce((s,i)=>s+(i.price*i.quantity),0);
+  const cartCount = cart.reduce((s,i)=>s+i.quantity,0);
+
+  const addToCart = (p) => {
+    const ex=cart.find(i=>i.id===p.id);
+    if(ex) setCart(cart.map(i=>i.id===p.id?{...i,quantity:i.quantity+1}:i));
+    else setCart([...cart,{...p,quantity:1}]);
+    showToast(`${p.name} added to cart`);
+  };
+  const removeFromCart = id => setCart(cart.filter(i=>i.id!==id));
+  const updateQty = (id,d) => setCart(cart.map(i=>i.id===id?{...i,quantity:i.quantity+d}:i).filter(i=>i.quantity>0));
+  const toggleFav = id => setFavorites(favorites.includes(id)?favorites.filter(f=>f!==id):[...favorites,id]);
+
+  const saveProduct = d => {
+    if(editingProduct) setProducts(products.map(p=>p.id===editingProduct.id?{...d,id:p.id}:p));
+    else setProducts([...products,{...d,id:Date.now()}]);
+    setShowProductForm(false); setEditingProduct(null);
+    showToast(editingProduct?'Product updated':'Product added');
+    pushCloud();
+  };
+  const deleteProduct = id => { if(window.confirm('Delete this product?')){ setProducts(products.filter(p=>p.id!==id)); setCart(cart.filter(i=>i.id!==id)); showToast('Product deleted'); pushCloud(); }};
+
+  const subscribe = email => {
+    if(subscribers.find(s=>s.email===email)) return showToast('You are already subscribed!');
+    setSubscribers(prev=>[...prev,{email,date:new Date().toISOString().split('T')[0]}]);
+    showToast('Thank you for subscribing! 🌿');
+    pushCloud();
+  };
+
+  const unsubscribe = email => {
+    const trimmed = email.trim().toLowerCase();
+    const found = subscribers.find(s=>s.email.toLowerCase()===trimmed);
+    if(!found) return showToast('That email is not on our list.');
+    setSubscribers(prev=>prev.filter(s=>s.email.toLowerCase()!==trimmed));
+    showToast('You have been unsubscribed. Sorry to see you go 🌿');
+    pushCloud();
+  };
+
+  const handleCheckout = () => {
+    const link = settings.paymentLink.trim();
+    if(link){ window.open(/^https?:\/\//.test(link)?link:'https://'+link,'_blank'); }
+    else alert('Payment is being set up. Please contact us to complete your order.');
+  };
+
+  const adminLogin = pw => {
+    if(pw===settings.adminPassword){ setIsAdmin(true); setShowAdminLogin(false); window.history.replaceState(null,'',window.location.pathname); showToast('Welcome to Admin Dashboard'); }
+    else alert('Incorrect password. Please try again.');
+  };
+
+  return (
+    <div>
+      {/* HEADER */}
+      <header>
+        <div className="container">
+          <div className="header-content">
+            <div className="logo" onClick={handleLogoClick}>
+              <Icon name="leaf" style={{width:'30px',height:'30px',color:'#059669'}}/>
+              <h1 className="logo-text">RemedyBloomy</h1>
+            </div>
+            <nav style={{display:window.innerWidth>=768?'flex':'none'}}>
+              <button onClick={()=>{setIsAdmin(false);setActiveView('shop');}} className={!isAdmin&&activeView==='shop'?'active':''}>Shop</button>
+              <button onClick={()=>{setIsAdmin(false);setActiveView('blog');}} className={!isAdmin&&activeView==='blog'?'active':''}>Blog</button>
+              <button onClick={()=>{setIsAdmin(false);setActiveView('videos');}} className={!isAdmin&&activeView==='videos'?'active':''}>Videos</button>
+              <button onClick={()=>{setIsAdmin(false);setActiveView('subscribe');}} className={!isAdmin&&activeView==='subscribe'?'active':''}>Subscribe</button>
+              {isAdmin&&<button onClick={()=>setIsAdmin(true)} className="active" style={{color:'#d97706',background:'#fef3c7',padding:'.25rem .75rem',borderRadius:'9999px',fontSize:'.8rem'}}>⚙ Admin</button>}
+            </nav>
+            <div style={{display:'flex',alignItems:'center',gap:'1rem'}}>
+
+              <button onClick={()=>setShowCart(!showCart)} className="cart-button">
+                <Icon name="shopping-cart" style={{width:'24px',height:'24px',color:'#047857'}}/>
+                {cartCount>0&&<span className="cart-badge">{cartCount}</span>}
+              </button>
+              <button onClick={()=>setShowMenu(!showMenu)} className="cart-button" style={{display:window.innerWidth<768?'block':'none'}}>
+                <Icon name="menu" style={{width:'24px',height:'24px',color:'#047857'}}/>
+              </button>
+            </div>
+          </div>
+        </div>
+        {showMenu&&(
+          <div style={{borderTop:'1px solid #d1fae5',background:'white',padding:'1rem'}}>
+            {[['Shop','shop'],['Blog','blog'],['Videos','videos'],['Subscribe','subscribe']].map(([l,v])=>(
+              <button key={v} onClick={()=>{setIsAdmin(false);setActiveView(v);setShowMenu(false);}}
+                style={{display:'block',width:'100%',textAlign:'left',padding:'.5rem 1rem',borderRadius:'.5rem',background:!isAdmin&&activeView===v?'#f0fdf4':'white',border:'none',cursor:'pointer',marginBottom:'.25rem',fontWeight:'500'}}>
+                {l}
+              </button>
+            ))}
+            {isAdmin&&<button onClick={()=>{setShowMenu(false);}} style={{display:'block',width:'100%',textAlign:'left',padding:'.5rem 1rem',borderRadius:'.5rem',background:'#fef3c7',border:'none',cursor:'pointer',fontWeight:'500',color:'#92400e'}}>⚙ Admin Panel</button>}
+          </div>
+        )}
+      </header>
+
+      {/* CART */}
+      {showCart&&(
+        <div className="cart-overlay">
+          <div className="cart-backdrop" onClick={()=>setShowCart(false)}/>
+          <div className="cart-sidebar scrollbar-hide">
+            <div className="cart-header">
+              <h2 className="cart-title">Your Cart</h2>
+              <button onClick={()=>setShowCart(false)} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'24px',height:'24px'}}/></button>
+            </div>
+            <div className="cart-content">
+              {cart.length===0?(
+                <div style={{textAlign:'center',padding:'3rem 0'}}>
+                  <Icon name="shopping-cart" style={{width:'56px',height:'56px',color:'#d1d5db',display:'block',margin:'0 auto 1rem'}}/>
+                  <p style={{color:'#6b7280'}}>Your cart is empty</p>
+                </div>
+              ):(
+                <>
+                  {cart.map(item=>(
+                    <div key={item.id} className="cart-item">
+                      <img src={item.image} alt={item.name} className="cart-item-image"/>
+                      <div className="cart-item-info">
+                        <h3 className="cart-item-name">{item.name}</h3>
+                        <p className="cart-item-price">{fp(item.price)} <span style={{fontWeight:'400',fontSize:'.8rem',color:'#9ca3af'}}>{fpAlt(item.price)}</span></p>
+                        <div className="quantity-controls">
+                          <button onClick={()=>updateQty(item.id,-1)} className="quantity-button">-</button>
+                          <span className="quantity-display">{item.quantity}</span>
+                          <button onClick={()=>updateQty(item.id,1)} className="quantity-button">+</button>
+                        </div>
+                      </div>
+                      <button onClick={()=>removeFromCart(item.id)} className="remove-button"><Icon name="trash-2" style={{width:'18px',height:'18px'}}/></button>
+                    </div>
+                  ))}
+                  <div className="cart-total">
+                    <div className="cart-total-row">
+                      <span className="cart-total-label">Total</span>
+                      <div style={{textAlign:'right'}}>
+                        <div className="cart-total-amount">{fp(cartTotal)}</div>
+                        <div style={{fontSize:'.8rem',color:'#9ca3af',marginTop:'.1rem'}}>{fpAlt(cartTotal)}</div>
+                      </div>
+                    </div>
+                    <button className="checkout-button" onClick={handleCheckout}>
+                      <Icon name="credit-card" style={{width:'18px',height:'18px'}}/>
+                      Proceed to Checkout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN LOGIN MODAL */}
+      {showAdminLogin&&<AdminLoginModal onLogin={adminLogin} onClose={()=>{setShowAdminLogin(false);window.history.replaceState(null,'',window.location.pathname);}}/>}
+
+      {/* PRODUCT DETAIL MODAL */}
+      {viewingProduct&&<ProductDetailModal product={viewingProduct} fp={fp} fpAlt={fpAlt} onAddToCart={addToCart} onToggleFav={toggleFav} isFav={favorites.includes(viewingProduct.id)} onClose={()=>setViewingProduct(null)}/>}
+
+      {/* BLOG READ MODAL */}
+      {readingBlog&&(
+        <div className="modal-overlay">
+          <div className="modal-backdrop" onClick={()=>setReadingBlog(null)}/>
+          <div className="modal-content scrollbar-hide" style={{maxWidth:'52rem'}}>
+            <div className="modal-header">
+              <h2 className="modal-title" style={{flex:1,paddingRight:'1rem'}}>{readingBlog.title}</h2>
+              <button onClick={()=>setReadingBlog(null)} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'24px',height:'24px'}}/></button>
+            </div>
+            <div className="modal-body">
+              {readingBlog.image&&<img src={readingBlog.image} alt={readingBlog.title} className="blog-full-image" onError={e=>e.target.style.display='none'}/>}
+              <div style={{display:'flex',gap:'1.5rem',marginBottom:'1.5rem',color:'#6b7280',fontSize:'.875rem',flexWrap:'wrap'}}>
+                <span style={{display:'flex',alignItems:'center',gap:'.375rem'}}><Icon name="calendar" style={{width:'14px',height:'14px'}}/>{formatDate(readingBlog.date)}</span>
+                <span style={{display:'flex',alignItems:'center',gap:'.375rem'}}><Icon name="user" style={{width:'14px',height:'14px'}}/>{readingBlog.author}</span>
+              </div>
+              <p className="blog-full-content">{readingBlog.content}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIDEO MODAL */}
+      {playingVideo&&(
+        <div className="modal-overlay">
+          <div className="modal-backdrop" onClick={()=>setPlayingVideo(null)}/>
+          <div className="modal-content video-modal-content scrollbar-hide">
+            <div className="modal-header">
+              <h2 className="modal-title" style={{flex:1,paddingRight:'1rem'}}>{playingVideo.title}</h2>
+              <button onClick={()=>setPlayingVideo(null)} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'24px',height:'24px'}}/></button>
+            </div>
+            <div className="modal-body">
+              <VideoPlayer video={playingVideo}/>
+              {playingVideo.description&&<p style={{color:'#6b7280',fontSize:'.9rem',marginTop:'1rem',lineHeight:'1.6'}}>{playingVideo.description}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN CONTENT */}
+      <main className="container" style={{paddingTop:'2rem',paddingBottom:'2rem'}}>
+        {isAdmin?(
+          <AdminPanel
+            products={products} categories={categories} blogs={blogs}
+            videos={videos} testimonials={testimonials} subscribers={subscribers}
+            settings={settings}
+            onSettingsChange={(sectionOrObj,val)=>{
+              const nested=['social','contact','chat','newsletter','apiKeys'];
+              let updated;
+              if(val===undefined){
+                updated = {...stateRef.current.settings,...sectionOrObj,
+                  social:{...(stateRef.current.settings.social||{}),...(sectionOrObj.social||{})},
+                  contact:{...(stateRef.current.settings.contact||{}),...(sectionOrObj.contact||{})},
+                  chat:{...(stateRef.current.settings.chat||{}),...(sectionOrObj.chat||{})},
+                  newsletter:{...(stateRef.current.settings.newsletter||{}),...(sectionOrObj.newsletter||{})},
+                  apiKeys:{...(stateRef.current.settings.apiKeys||{}),...(sectionOrObj.apiKeys||{})}
+                };
+              } else if(nested.includes(sectionOrObj)){
+                updated = {...stateRef.current.settings,[sectionOrObj]:{...(stateRef.current.settings[sectionOrObj]||{}),...val}};
+              } else {
+                updated = {...stateRef.current.settings,[sectionOrObj]:val};
+              }
+              setSettings(updated);
+              pushCloud(updated); // Push to cloud immediately with the new settings value
+            }}
+            onEditProduct={p=>{setEditingProduct(p);setShowProductForm(true);}}
+            onAddProduct={()=>{setEditingProduct(null);setShowProductForm(true);}}
+            onDeleteProduct={deleteProduct}
+            onAddCategory={cat=>{if(!categories.includes(cat)){setCategories(prev=>{const n=[...prev,cat];return n;});pushCloud();}}}
+            onDeleteCategory={cat=>{setCategories(prev=>{const n=prev.filter(c=>c!==cat);return n;});pushCloud();}}
+            onSaveBlog={b=>{ if(b.id)setBlogs(blogs.map(x=>x.id===b.id?b:x)); else setBlogs([...blogs,{...b,id:Date.now()}]); showToast('Blog post saved'); pushCloud();}}
+            onDeleteBlog={id=>{if(window.confirm('Delete this post?')){setBlogs(blogs.filter(b=>b.id!==id));showToast('Post deleted');pushCloud();}}}
+            onSaveVideo={v=>{ if(v.id)setVideos(videos.map(x=>x.id===v.id?v:x)); else setVideos([...videos,{...v,id:Date.now()}]); showToast('Video saved'); pushCloud();}}
+            onDeleteVideo={id=>{if(window.confirm('Delete this video?')){setVideos(videos.filter(v=>v.id!==id));showToast('Video deleted');pushCloud();}}}
+            onSaveTestimonial={t=>{ if(t.id)setTestimonials(testimonials.map(x=>x.id===t.id?t:x)); else setTestimonials([...testimonials,{...t,id:Date.now()}]); showToast('Testimonial saved'); pushCloud();}}
+            onDeleteTestimonial={id=>{if(window.confirm('Delete?')){setTestimonials(testimonials.filter(t=>t.id!==id));showToast('Deleted');pushCloud();}}}
+            onClearSubscribers={()=>{if(window.confirm('Clear all subscribers?')){setSubscribers([]);pushCloud();}}}
+            onExitAdmin={()=>setIsAdmin(false)}
+            onLogout={()=>{ setIsAdmin(false); showToast('You have been logged out.'); }}
+            showToast={showToast}
+          />
+        ):activeView==='blog'?(
+          <BlogPage blogs={blogs} onReadMore={setReadingBlog}/>
+        ):activeView==='videos'?(
+          <VideosPage videos={videos} onPlay={setPlayingVideo}/>
+        ):activeView==='subscribe'?(
+          <SubscribePage settings={settings} onSubscribe={subscribe} onUnsubscribe={unsubscribe}/>
+        ):(
+          <ShopPage
+            products={products} featured={featured} filtered={filtered}
+            allCats={allCats} selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory}
+            searchQuery={searchQuery} onSearchChange={setSearchQuery}
+            onAddToCart={addToCart} onToggleFav={toggleFav} favorites={favorites}
+            fp={fp} fpAlt={fpAlt} onViewProduct={setViewingProduct}
+            testimonials={testimonials} settings={settings} onSubscribe={subscribe} onUnsubscribe={unsubscribe}
+          />
+        )}
+      </main>
+
+      {/* FOOTER */}
+      <Footer settings={settings} onSubscribe={subscribe} onUnsubscribe={unsubscribe}/>
+
+      {/* PRODUCT FORM */}
+      {showProductForm&&<ProductForm product={editingProduct} categories={categories} onSave={saveProduct} onCancel={()=>{setShowProductForm(false);setEditingProduct(null);}}/>}
+
+      {/* LIVE CHAT */}
+      {settings.chat.enabled&&<ChatWidget settings={settings}/>}
+
+      {/* TOAST */}
+      {toast&&<div className="toast">{toast}</div>}
+    </div>
+  );
+}
+
+// ===== ADMIN LOGIN MODAL =====
+function AdminLoginModal({onLogin,onClose}) {
+  const [pw,setPw] = React.useState('');
+  const [show,setShow] = React.useState(false);
+  return (
+    <div className="modal-overlay">
+      <div className="modal-backdrop" onClick={onClose}/>
+      <div className="modal-content admin-login-modal">
+        <div className="modal-body" style={{padding:'2rem'}}>
+          <div className="admin-login-logo">
+            <Icon name="shield-check" style={{width:'48px',height:'48px',color:'#059669',display:'block',margin:'0 auto .75rem'}}/>
+            <h2 className="font-display" style={{fontSize:'1.75rem',fontWeight:'700',color:'#064e3b',textAlign:'center'}}>Admin Access</h2>
+            <p style={{color:'#6b7280',fontSize:'.875rem',textAlign:'center',marginTop:'.25rem'}}>Enter your admin password to continue</p>
+          </div>
+          <div className="form-group" style={{position:'relative'}}>
+            <label className="form-label">Password</label>
+            <input type={show?'text':'password'} value={pw} onChange={e=>setPw(e.target.value)} className="form-input" placeholder="Enter admin password" onKeyDown={e=>e.key==='Enter'&&onLogin(pw)} autoFocus/>
+            <button onClick={()=>setShow(!show)} style={{position:'absolute',right:'.75rem',top:'2.1rem',background:'none',border:'none',cursor:'pointer',color:'#9ca3af'}}>
+              <Icon name={show?'eye-off':'eye'} style={{width:'18px',height:'18px'}}/>
+            </button>
+          </div>
+          <div style={{display:'flex',gap:'1rem'}}>
+            <button onClick={onClose} className="btn btn-secondary" style={{flex:1}}>Cancel</button>
+            <button onClick={()=>onLogin(pw)} className="btn btn-primary" style={{flex:1}}>Enter Dashboard</button>
+          </div>
+          <p style={{textAlign:'center',color:'#9ca3af',fontSize:'.75rem',marginTop:'1rem'}}>
+            Access via <code style={{background:'#f3f4f6',padding:'.1rem .3rem',borderRadius:'.25rem'}}>yourpage.html#admin</code> or triple-click the logo
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== PRODUCT DETAIL MODAL =====
+function ProductDetailModal({product,fp,fpAlt,onAddToCart,onToggleFav,isFav,onClose}) {
+  const diseases = product.diseasesTreated?product.diseasesTreated.split(',').map(d=>d.trim()).filter(Boolean):[];
+  return (
+    <div className="modal-overlay">
+      <div className="modal-backdrop" onClick={onClose}/>
+      <div className="modal-content detail-modal scrollbar-hide">
+        <div className="modal-header">
+          <h2 className="modal-title">{product.name}</h2>
+          <button onClick={onClose} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'24px',height:'24px'}}/></button>
+        </div>
+        <div className="modal-body">
+          <div style={{display:'grid',gridTemplateColumns:window.innerWidth>600?'1fr 1fr':'1fr',gap:'1.5rem'}}>
+            <div>
+              <div className="detail-image-wrap">
+                <img src={product.image} alt={product.name} className="detail-image"/>
+                {product.featured&&<div className="featured-badge">⭐ Featured</div>}
+              </div>
+              <div className="price-block">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div>
+                    <div style={{fontSize:'1.75rem',fontWeight:'700',color:'#059669'}}>{fp(product.price)}</div>
+                    <div style={{fontSize:'.875rem',color:'#6b7280',marginTop:'.15rem',fontWeight:'500'}}>{fpAlt(product.price)}</div>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:'.375rem',background:'#fef3c7',padding:'.4rem .75rem',borderRadius:'9999px'}}>
+                    <Icon name="star" style={{width:'16px',height:'16px',color:'#d97706',fill:'#d97706'}}/>
+                    <span style={{fontWeight:'700',color:'#92400e'}}>{product.rating}</span>
+                  </div>
+                </div>
+                <div style={{display:'flex',gap:'.75rem',marginTop:'1rem'}}>
+                  <button onClick={()=>onAddToCart(product)} className="btn btn-primary" style={{flex:1,justifyContent:'center'}}>
+                    <Icon name="shopping-cart" style={{width:'16px',height:'16px'}}/>Add to Cart
+                  </button>
+                  <button onClick={()=>onToggleFav(product.id)} style={{padding:'.75rem',background:isFav?'#fee2e2':'white',border:'1px solid #d1d5db',borderRadius:'9999px',cursor:'pointer',transition:'all .2s'}}>
+                    <Icon name="heart" style={{width:'18px',height:'18px',color:isFav?'#ef4444':'#6b7280',fill:isFav?'#ef4444':'none'}}/>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div style={{display:'flex',alignItems:'center',gap:'.5rem',marginBottom:'1rem'}}>
+                <span style={{background:'#ecfdf5',color:'#065f46',border:'1px solid #6ee7b7',padding:'.3rem .875rem',borderRadius:'9999px',fontSize:'.8rem',fontWeight:'600'}}>{product.category}</span>
+              </div>
+              <div className="detail-section">
+                <h4><Icon name="info" style={{width:'16px',height:'16px'}}/>About</h4>
+                <p>{product.description}</p>
+              </div>
+              {product.uses&&(
+                <div className="detail-section">
+                  <h4><Icon name="flask-conical" style={{width:'16px',height:'16px'}}/>How to Use</h4>
+                  <p>{product.uses}</p>
+                </div>
+              )}
+              {diseases.length>0&&(
+                <div className="detail-section">
+                  <h4><Icon name="heart-pulse" style={{width:'16px',height:'16px'}}/>Conditions It Helps</h4>
+                  <div style={{marginTop:'.375rem'}}>
+                    {diseases.map((d,i)=><span key={i} className="detail-tag">{d}</span>)}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== SHOP PAGE =====
+function ShopPage({products,featured,filtered,allCats,selectedCategory,onCategoryChange,searchQuery,onSearchChange,onAddToCart,onToggleFav,favorites,fp,fpAlt,onViewProduct,testimonials,settings,onSubscribe,onUnsubscribe}) {
+  return (
+    <>
+      <section className="hero leaf-pattern fade-in-up">
+        <div className="hero-content">
+          <h2>Discover Nature's Healing Power</h2>
+          <p>Simple, natural remedies backed by tradition and science</p>
+          <button onClick={()=>document.getElementById('products').scrollIntoView({behavior:'smooth'})} className="btn btn-secondary">Explore Products</button>
+        </div>
+      </section>
+
+      {featured.length>0&&(
+        <section style={{marginBottom:'3rem'}}>
+          <h2 className="font-display" style={{fontSize:'2rem',fontWeight:'700',color:'#064e3b',marginBottom:'1.5rem',display:'flex',alignItems:'center'}}>
+            <Icon name="star" style={{width:'28px',height:'28px',color:'#f59e0b',fill:'#f59e0b',marginRight:'.75rem'}}/>
+            Featured Remedies
+          </h2>
+          <div className="products-grid">
+            {featured.slice(0,3).map((p,i)=><ProductCard key={p.id} product={p} onAddToCart={onAddToCart} onToggleFav={onToggleFav} isFav={favorites.includes(p.id)} delay={i*.1} fp={fp} fpAlt={fpAlt} onViewProduct={onViewProduct}/>)}
+          </div>
+        </section>
+      )}
+
+      <section id="products" style={{marginBottom:'2rem'}}>
+        <div className="search-filter">
+          <div style={{display:'flex',gap:'1rem',flexWrap:'wrap'}}>
+            <div className="search-input-container">
+              <Icon name="search" className="search-icon" style={{width:'18px',height:'18px'}}/>
+              <input type="text" placeholder="Search natural remedies..." value={searchQuery} onChange={e=>onSearchChange(e.target.value)} className="search-input"/>
+            </div>
+            <div className="category-buttons scrollbar-hide">
+              {allCats.map(c=><button key={c} onClick={()=>onCategoryChange(c)} className={`category-button ${selectedCategory===c?'active':''}`}>{c}</button>)}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="font-display" style={{fontSize:'2rem',fontWeight:'700',color:'#064e3b',marginBottom:'1.5rem'}}>All Products</h2>
+        {filtered.length===0?(
+          <div className="glass" style={{textAlign:'center',padding:'3rem',borderRadius:'1rem'}}>
+            <p style={{fontSize:'1.125rem',color:'#6b7280'}}>No products found</p>
+          </div>
+        ):(
+          <div className="products-grid">
+            {filtered.map((p,i)=><ProductCard key={p.id} product={p} onAddToCart={onAddToCart} onToggleFav={onToggleFav} isFav={favorites.includes(p.id)} delay={i*.05} fp={fp} fpAlt={fpAlt} onViewProduct={onViewProduct}/>)}
+          </div>
+        )}
+      </section>
+
+      {testimonials.length>0&&<TestimonialsSection testimonials={testimonials}/>}
+
+      {settings.newsletter.enabled&&(
+        <div className="newsletter-section">
+          <h3>{settings.newsletter.title}</h3>
+          <p>{settings.newsletter.description}</p>
+          <NewsletterForm onSubscribe={onSubscribe} onUnsubscribe={onUnsubscribe}/>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ===== PRODUCT CARD =====
+function ProductCard({product,onAddToCart,onToggleFav,isFav,delay,fp,fpAlt,onViewProduct}) {
+  return (
+    <div className="product-card hover-lift fade-in-up" style={{animationDelay:`${delay}s`}}>
+      <div className="product-image-container" onClick={()=>onViewProduct(product)}>
+        <img src={product.image} alt={product.name} className="product-image"/>
+        <div className="product-image-overlay">
+          <span><Icon name="zoom-in" style={{width:'14px',height:'14px'}}/>View Details</span>
+        </div>
+        <button onClick={e=>{e.stopPropagation();onToggleFav(product.id);}} className="favorite-button">
+          <Icon name="heart" style={{width:'18px',height:'18px',color:isFav?'#ef4444':'#6b7280',fill:isFav?'#ef4444':'none'}}/>
+        </button>
+        {product.featured&&<div className="featured-badge">Featured</div>}
+      </div>
+      <div className="product-info">
+        <div className="product-header">
+          <h3 className="product-name">{product.name}</h3>
+          <div className="badge badge-rating">
+            <Icon name="star" style={{width:'10px',height:'10px',fill:'#d97706',marginRight:'.2rem'}}/>
+            <span>{product.rating}</span>
+          </div>
+        </div>
+        <p className="product-category">{product.category}</p>
+        <p className="product-description">{product.description}</p>
+        <div className="product-footer">
+          <div style={{display:'flex',flexDirection:'column',gap:'.1rem'}}>
+            <span className="product-price">{fp(product.price)}</span>
+            <span style={{fontSize:'.75rem',color:'#6b7280',fontWeight:'500'}}>{fpAlt(product.price)}</span>
+          </div>
+          <button onClick={()=>onAddToCart(product)} className="btn btn-primary" style={{fontSize:'.8rem',padding:'.5rem 1rem'}}>
+            <Icon name="shopping-cart" style={{width:'14px',height:'14px'}}/>Add
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== TESTIMONIALS =====
+function TestimonialsSection({testimonials}) {
+  const renderStars = n => [...Array(5)].map((_,i)=>(
+    <Icon key={i} name="star" style={{width:'14px',height:'14px',color:i<n?'#f59e0b':'#d1d5db',fill:i<n?'#f59e0b':'none'}}/>
+  ));
+  return (
+    <div className="testimonials-section">
+      <h2 className="font-display" style={{fontSize:'2rem',fontWeight:'700',color:'#064e3b',display:'flex',alignItems:'center',gap:'.75rem'}}>
+        <Icon name="message-circle" style={{width:'28px',height:'28px',color:'#059669'}}/>What Our Customers Say
+      </h2>
+      <div className="testimonials-grid">
+        {testimonials.map(t=>(
+          <div key={t.id} className="testimonial-card hover-lift">
+            <div className="testimonial-stars">{renderStars(t.rating)}</div>
+            <p className="testimonial-text">"{t.text}"</p>
+            <div className="testimonial-author">
+              {t.photo?(
+                <img src={t.photo} alt={t.name} className="testimonial-avatar" style={{width:'2.75rem',height:'2.75rem',borderRadius:'9999px',objectFit:'cover'}} onError={e=>e.target.style.display='none'}/>
+              ):(
+                <div className="testimonial-avatar">{t.name.charAt(0)}</div>
+              )}
+              <div>
+                <div className="testimonial-name">{t.name}</div>
+                <div className="testimonial-location">{t.location}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===== NEWSLETTER FORM =====
+function NewsletterForm({onSubscribe,onUnsubscribe}) {
+  const [email,setEmail] = React.useState('');
+  const [mode,setMode] = React.useState('subscribe'); // 'subscribe' | 'unsubscribe'
+  const [done,setDone] = React.useState(null); // null | 'subscribed' | 'unsubscribed'
+  const [error,setError] = React.useState('');
+
+  const validate = (e) => {
+    if(!e.trim()) return 'Email is required';
+    if(!e.includes('@')||!e.includes('.')) return 'Enter a valid email address';
+    return '';
+  };
+
+  const handleSubscribe = () => {
+    const err = validate(email);
+    if(err){setError(err);return;}
+    onSubscribe(email.trim());
+    setDone('subscribed');
+    setEmail('');
+    setTimeout(()=>setDone(null), 4000);
+  };
+
+  const handleUnsubscribe = () => {
+    const err = validate(email);
+    if(err){setError(err);return;}
+    onUnsubscribe(email.trim());
+    setDone('unsubscribed');
+    setEmail('');
+    setTimeout(()=>setDone(null), 4000);
+  };
+
+  if(done==='subscribed') return (
+    <div style={{textAlign:'center',padding:'.5rem 0'}}>
+      <p style={{color:'#d1fae5',fontWeight:'700',fontSize:'1.05rem',marginBottom:'.375rem'}}>✓ You're subscribed! Welcome to the community 🌿</p>
+      <p style={{color:'#a7f3d0',fontSize:'.85rem'}}>Expect wellness tips and exclusive offers in your inbox.</p>
+    </div>
+  );
+  if(done==='unsubscribed') return (
+    <div style={{textAlign:'center',padding:'.5rem 0'}}>
+      <p style={{color:'#fca5a5',fontWeight:'700',fontSize:'1.05rem',marginBottom:'.375rem'}}>You've been unsubscribed.</p>
+      <p style={{color:'#d1fae5',fontSize:'.85rem'}}>Sorry to see you go. You can re-subscribe anytime.</p>
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Mode toggle */}
+      <div style={{display:'flex',justifyContent:'center',marginBottom:'1rem'}}>
+        <div style={{display:'flex',background:'rgba(255,255,255,.15)',borderRadius:'9999px',padding:'.2rem'}}>
+          <button
+            onClick={()=>{setMode('subscribe');setError('');}}
+            style={{padding:'.4rem 1.25rem',borderRadius:'9999px',border:'none',cursor:'pointer',fontWeight:'600',fontSize:'.82rem',fontFamily:"'Lato',sans-serif",transition:'all .2s',
+              background:mode==='subscribe'?'white':'transparent',
+              color:mode==='subscribe'?'#059669':'rgba(255,255,255,.8)'
+            }}>Subscribe</button>
+          <button
+            onClick={()=>{setMode('unsubscribe');setError('');}}
+            style={{padding:'.4rem 1.25rem',borderRadius:'9999px',border:'none',cursor:'pointer',fontWeight:'600',fontSize:'.82rem',fontFamily:"'Lato',sans-serif",transition:'all .2s',
+              background:mode==='unsubscribe'?'white':'transparent',
+              color:mode==='unsubscribe'?'#dc2626':'rgba(255,255,255,.8)'
+            }}>Unsubscribe</button>
+        </div>
+      </div>
+
+      <div className="newsletter-form">
+        <input
+          type="email"
+          placeholder={mode==='subscribe'?'your@email.com':'enter your subscribed email'}
+          value={email}
+          onChange={e=>{setEmail(e.target.value);setError('');}}
+          className="newsletter-input"
+          onKeyDown={e=>e.key==='Enter'&&(mode==='subscribe'?handleSubscribe():handleUnsubscribe())}
+        />
+        {mode==='subscribe'
+          ? <button onClick={handleSubscribe} className="newsletter-btn">Subscribe</button>
+          : <button onClick={handleUnsubscribe} className="newsletter-btn" style={{background:'#dc2626'}}>Unsubscribe</button>
+        }
+      </div>
+      {error&&<p style={{color:'#fca5a5',fontSize:'.8rem',marginTop:'.625rem',textAlign:'center'}}>{error}</p>}
+      {mode==='unsubscribe'&&!error&&(
+        <p style={{color:'#d1fae5',fontSize:'.78rem',marginTop:'.5rem',textAlign:'center',opacity:.8}}>
+          Enter the email you used to subscribe and we'll remove it immediately.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ===== SUBSCRIBE PAGE =====
+function SubscribePage({settings,onSubscribe,onUnsubscribe}) {
+  return (
+    <div style={{maxWidth:'45rem',margin:'0 auto',padding:'3rem 1.5rem'}}>
+      <div style={{textAlign:'center',marginBottom:'3rem'}}>
+        <Icon name="mail" style={{width:'64px',height:'64px',color:'#059669',display:'block',margin:'0 auto 1.5rem'}}/>
+        <h2 className="font-display" style={{fontSize:'2.5rem',fontWeight:'700',color:'#064e3b',marginBottom:'1rem'}}>{settings.newsletter.title}</h2>
+        <p style={{color:'#6b7280',fontSize:'1.05rem',marginBottom:'0.5rem',lineHeight:'1.6'}}>{settings.newsletter.description}</p>
+      </div>
+
+      {/* Benefits */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1.25rem',marginBottom:'2.5rem'}}>
+        <div style={{textAlign:'center',padding:'1.25rem',background:'#f0fdf4',borderRadius:'1rem',border:'1px solid #bbf7d0'}}>
+          <div style={{fontSize:'1.75rem',marginBottom:'.5rem'}}>🌿</div>
+          <p style={{fontSize:'.9rem',color:'#065f46',fontWeight:'600'}}>Wellness Tips</p>
+          <p style={{fontSize:'.8rem',color:'#6b7280'}}>Weekly natural remedies</p>
+        </div>
+        <div style={{textAlign:'center',padding:'1.25rem',background:'#fef3c7',borderRadius:'1rem',border:'1px solid #fde68a'}}>
+          <div style={{fontSize:'1.75rem',marginBottom:'.5rem'}}>🎁</div>
+          <p style={{fontSize:'.9rem',color:'#92400e',fontWeight:'600'}}>Exclusive Offers</p>
+          <p style={{fontSize:'.8rem',color:'#6b7280'}}>Subscriber-only deals</p>
+        </div>
+      </div>
+
+      <div style={{background:'white',borderRadius:'1.5rem',padding:'2.5rem',boxShadow:'0 4px 20px rgba(0,0,0,.08)',border:'1px solid #f0f0f0'}}>
+        <NewsletterForm onSubscribe={onSubscribe} onUnsubscribe={onUnsubscribe}/>
+
+      </div>
+    </div>
+  );
+}
+
+// ===== BLOG PAGE =====
+function BlogPage({blogs,onReadMore}) {
+  return (
+    <>
+      <div style={{marginBottom:'2rem'}}>
+        <h2 className="font-display" style={{fontSize:'2.25rem',fontWeight:'700',color:'#064e3b',marginBottom:'.5rem'}}>Wellness Blog</h2>
+        <p style={{color:'#6b7280',fontSize:'1rem'}}>Insights, tips & stories from the world of natural wellness</p>
+      </div>
+      {blogs.length===0?(
+        <div className="glass" style={{textAlign:'center',padding:'4rem',borderRadius:'1rem'}}>
+          <Icon name="book-open" style={{width:'48px',height:'48px',color:'#d1d5db',display:'block',margin:'0 auto 1rem'}}/>
+          <p style={{color:'#6b7280',fontSize:'1.125rem'}}>No blog posts yet</p>
+        </div>
+      ):(
+        <div className="blog-grid">
+          {blogs.map((b,i)=>(
+            <article key={b.id} className="blog-card fade-in-up" style={{animationDelay:`${i*.1}s`}}>
+              {b.image?<img src={b.image} alt={b.title} className="blog-card-image" onError={e=>e.target.style.display='none'}/>:<div className="blog-card-image-placeholder"><Icon name="book-open" style={{width:'40px',height:'40px',color:'#6ee7b7'}}/></div>}
+              <div className="blog-card-body">
+                <p className="blog-card-date">{formatDate(b.date)} · {b.author}</p>
+                <h3 className="blog-card-title">{b.title}</h3>
+                <p className="blog-card-excerpt">{b.excerpt}</p>
+                <button className="read-more-link" onClick={()=>onReadMore(b)}>Read More <Icon name="arrow-right" style={{width:'13px',height:'13px'}}/></button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ===== VIDEOS PAGE =====
+function VideosPage({videos,onPlay}) {
+  return (
+    <>
+      <div style={{marginBottom:'2rem'}}>
+        <h2 className="font-display" style={{fontSize:'2.25rem',fontWeight:'700',color:'#064e3b',marginBottom:'.5rem'}}>Wellness Videos</h2>
+        <p style={{color:'#6b7280',fontSize:'1rem'}}>Watch and learn from our collection of natural wellness guides</p>
+      </div>
+      {videos.length===0?(
+        <div className="glass" style={{textAlign:'center',padding:'4rem',borderRadius:'1rem'}}>
+          <Icon name="video" style={{width:'48px',height:'48px',color:'#d1d5db',display:'block',margin:'0 auto 1rem'}}/>
+          <p style={{color:'#6b7280',fontSize:'1.125rem'}}>No videos yet</p>
+        </div>
+      ):(
+        <div className="videos-grid">
+          {videos.map((v,i)=>{
+            const info = extractVideo(v.url);
+            const thumb = info?.thumb||null;
+            return (
+              <div key={v.id} className="video-card fade-in-up" style={{animationDelay:`${i*.1}s`}} onClick={()=>onPlay(v)}>
+                <div className="video-thumb-wrap">
+                  {thumb
+                    ? <img src={thumb} alt={v.title} className="video-thumb"/>
+                    : <div className="video-thumb-placeholder"><Icon name="film" style={{width:'48px',height:'48px',color:'rgba(255,255,255,.6)'}}/></div>
+                  }
+                  <div className="play-btn">
+                    <div className="play-circle">
+                      <Icon name="play" style={{width:'24px',height:'24px',color:'#059669',fill:'#059669',marginLeft:'3px'}}/>
+                    </div>
+                  </div>
+                  {v.featured&&<div style={{position:'absolute',top:'.75rem',left:'.75rem',background:'#f59e0b',color:'white',padding:'.2rem .6rem',borderRadius:'9999px',fontSize:'.75rem',fontWeight:'700'}}>Featured</div>}
+                  {info&&info.type!=='direct'&&(
+                    <div style={{position:'absolute',bottom:'.75rem',right:'.75rem',background:info.type==='youtube'?'#dc2626':'#1ab7ea',color:'white',padding:'.2rem .6rem',borderRadius:'9999px',fontSize:'.7rem',fontWeight:'700'}}>
+                      {info.type==='youtube'?'YouTube':'Vimeo'}
+                    </div>
+                  )}
+                </div>
+                <div className="video-card-body">
+                  <h3 className="video-card-title">{v.title}</h3>
+                  <p className="video-card-desc">{v.description}</p>
+                  <p style={{fontSize:'.75rem',color:'#9ca3af',marginTop:'.5rem',display:'flex',alignItems:'center',gap:'.375rem'}}>
+                    <Icon name="calendar" style={{width:'11px',height:'11px'}}/>{formatDate(v.date)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ===== VIDEO PLAYER =====
+// Click-to-play: shows thumbnail first, injects iframe only on user click.
+// Works on any hosted server (http/https). autoplay=1 is honoured because
+// the iframe is created synchronously inside the click handler.
+function VideoPlayer({video}) {
+  const info = extractVideo(video.url);
+  const [playing, setPlaying] = React.useState(false);
+
+  if(!info) return (
+    <div style={{padding:'2.5rem',textAlign:'center',background:'#f9fafb',borderRadius:'.75rem'}}>
+      <Icon name="video-off" style={{width:'40px',height:'40px',color:'#d1d5db',display:'block',margin:'0 auto 1rem'}}/>
+      <p style={{color:'#6b7280',marginBottom:'1rem'}}>Unable to recognise this video URL.</p>
+      <a href={video.url} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{textDecoration:'none',display:'inline-flex'}}>
+        <Icon name="external-link" style={{width:'16px',height:'16px'}}/>Open Link
+      </a>
+    </div>
+  );
+
+  if(info.type==='direct') return (
+    <div style={{position:'relative',paddingBottom:'56.25%',height:0,borderRadius:'.75rem',overflow:'hidden',background:'#000'}}>
+      <video src={info.src} controls autoPlay style={{position:'absolute',top:0,left:0,width:'100%',height:'100%'}}/>
+    </div>
+  );
+
+  const isYT      = info.type==='youtube';
+  const platform  = isYT ? 'YouTube' : 'Vimeo';
+  const platColor = isYT ? '#dc2626' : '#1ab7ea';
+  // Use the embed URL from extractVideo and append autoplay
+  const embedSrc  = info.embedUrl + (info.embedUrl.includes('?') ? '&' : '?') + 'autoplay=1';
+
+  if(playing) return (
+    <div>
+      <div style={{position:'relative',paddingBottom:'56.25%',height:0,borderRadius:'.75rem',overflow:'hidden',background:'#000',boxShadow:'0 4px 24px rgba(0,0,0,.3)'}}>
+        <iframe
+          src={embedSrc}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+          style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
+          title={video.title}
+        />
+      </div>
+      <div style={{display:'flex',justifyContent:'center',marginTop:'.625rem'}}>
+        <a href={info.watchUrl} target="_blank" rel="noopener noreferrer"
+          style={{fontSize:'.78rem',color:'#9ca3af',textDecoration:'none',display:'inline-flex',alignItems:'center',gap:'.3rem'}}>
+          <Icon name="external-link" style={{width:'12px',height:'12px'}}/>Watch on {platform}
+        </a>
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      onClick={()=>setPlaying(true)}
+      style={{position:'relative',paddingBottom:'56.25%',height:0,borderRadius:'.75rem',overflow:'hidden',background:'#111',cursor:'pointer',boxShadow:'0 4px 24px rgba(0,0,0,.35)'}}
+    >
+      {info.thumb
+        ? <img src={info.thumb} alt={video.title} style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',objectFit:'cover',opacity:.82}}/>
+        : <div style={{position:'absolute',inset:0,background:'linear-gradient(135deg,#064e3b,#047857)'}}/>
+      }
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(0,0,0,.6) 0%,transparent 60%)'}}/>
+      <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div
+          style={{width:'72px',height:'72px',borderRadius:'50%',background:platColor,display:'flex',alignItems:'center',justifyContent:'center',boxShadow:'0 0 0 8px rgba(255,255,255,.18),0 8px 32px rgba(0,0,0,.5)',transition:'transform .2s'}}
+          onMouseOver={e=>e.currentTarget.style.transform='scale(1.1)'}
+          onMouseOut={e=>e.currentTarget.style.transform='scale(1)'}
+        >
+          <Icon name="play" style={{width:'32px',height:'32px',color:'white',fill:'white',marginLeft:'5px'}}/>
+        </div>
+      </div>
+      <div style={{position:'absolute',bottom:'.875rem',left:0,right:0,display:'flex',justifyContent:'center',gap:'.5rem'}}>
+        <span style={{background:platColor,color:'white',padding:'.25rem .7rem',borderRadius:'9999px',fontSize:'.7rem',fontWeight:'800'}}>{platform}</span>
+        <span style={{background:'rgba(0,0,0,.65)',backdropFilter:'blur(4px)',color:'white',padding:'.25rem .9rem',borderRadius:'9999px',fontSize:'.75rem',fontWeight:'700'}}>▶ Play Video</span>
+      </div>
+    </div>
+  );
+}
+
+// ===== FOOTER =====
+function Footer({settings,onSubscribe,onUnsubscribe}) {
+  const {social,contact,newsletter} = settings;
+  const socials = [
+    {key:'facebook',icon:'facebook',color:'#1877f2'},{key:'instagram',icon:'instagram',color:'#e1306c'},
+    {key:'twitter',icon:'twitter',color:'#1da1f2'},{key:'youtube',icon:'youtube',color:'#ff0000'},
+    {key:'whatsapp',icon:'phone',color:'#25d366'},{key:'tiktok',icon:'music',color:'#000'}
+  ];
+  return (
+    <footer>
+      <div className="footer-top">
+        <div className="container">
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <div className="logo"><Icon name="leaf" style={{width:'24px',height:'24px',color:'#6ee7b7'}}/><span className="logo-text">RemedyBloomy</span></div>
+              <p>Harnessing the power of nature to support your health and wellness journey. Natural remedies, crafted with love.</p>
+              <div className="footer-social">
+                {socials.filter(s=>social[s.key]).map(s=>(
+                  <a key={s.key} href={s.key==='whatsapp'?`https://wa.me/${social[s.key].replace(/\D/g,'')}`:(social[s.key].startsWith('http')?social[s.key]:'https://'+social[s.key])} target="_blank" rel="noopener noreferrer" className="social-icon" title={s.key} style={{'--sc':s.color}}>
+                    <Icon name={s.icon} style={{width:'16px',height:'16px'}}/>
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div className="footer-col">
+                <h4>Contact Us</h4>
+                {contact.phone&&<div className="footer-contact-item"><Icon name="phone" style={{width:'15px',height:'15px',flexShrink:0,marginTop:'2px'}}/><a href={`tel:${contact.phone}`}>{contact.phone}</a></div>}
+                {contact.email&&<div className="footer-contact-item"><Icon name="mail" style={{width:'15px',height:'15px',flexShrink:0,marginTop:'2px'}}/><a href={`mailto:${contact.email}`}>{contact.email}</a></div>}
+                {contact.address&&<div className="footer-contact-item"><Icon name="map-pin" style={{width:'15px',height:'15px',flexShrink:0,marginTop:'2px'}}/><span>{contact.address}</span></div>}
+                {!contact.phone&&!contact.email&&!contact.address&&<p style={{color:'rgba(255,255,255,.3)',fontSize:'.8rem'}}>Contact info not set</p>}
+              </div>
+            </div>
+            {newsletter.enabled&&(
+              <div>
+                <div className="footer-col">
+                  <h4>Stay Connected</h4>
+                  <p style={{color:'#a7f3d0',fontSize:'.85rem',marginBottom:'1rem',lineHeight:'1.5'}}>Join our community for weekly wellness tips.</p>
+                  <NewsletterForm onSubscribe={onSubscribe} onUnsubscribe={onUnsubscribe}/>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="footer-bottom">
+        <div className="container">
+          <span>© {new Date().getFullYear()} RemedyBloomy. All rights reserved.</span>
+          <span className="footer-secret" title="" onClick={()=>{ window.location.hash='#admin'; }}>•</span>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ===== LIVE CHAT WIDGET =====
+function ChatWidget({settings}) {
+  const [open,setOpen] = React.useState(false);
+  const [msgs,setMsgs] = React.useState([{from:'bot',text:settings.chat.greeting}]);
+  const [showed,setShowed] = React.useState(false);
+
+  const qaList = [
+    {q:"What products do you have?",a:"We offer Essential Oils, Herbal Teas, Superfoods, Supplements, and Skincare products. Visit our Shop to explore the full range!"},
+    {q:"How do I order?",a:"Simply add items to your cart, then click 'Proceed to Checkout'. You'll be directed to our secure payment page."},
+    {q:"Do you deliver in Kenya?",a:"Yes! We deliver across Kenya. Orders are processed within 24 hours and delivered in 2-5 business days."},
+    {q:"Are products natural?",a:"Absolutely! All our products are 100% natural, ethically sourced, and free from harmful additives."}
+  ];
+
+  const addReply = (q,a) => setMsgs(m=>[...m,{from:'user',text:q},{from:'bot',text:a}]);
+
+  const waNum = settings.contact?.phone||settings.social?.whatsapp||'';
+  const waLink = waNum?`https://wa.me/${waNum.replace(/\D/g,'')}?text=Hello%20RemedyBloomy!%20I%20need%20help`:'https://wa.me';
+
+  React.useEffect(()=>{ setTimeout(()=>setShowed(true),3000); },[]);
+
+  return (
+    <div className="chat-fab">
+      {open&&(
+        <div className="chat-panel">
+          <div className="chat-panel-header">
+            <div style={{width:'36px',height:'36px',background:'rgba(255,255,255,.2)',borderRadius:'9999px',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <Icon name="leaf" style={{width:'18px',height:'18px',color:'white'}}/>
+            </div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:'700',fontSize:'.9rem'}}>RemedyBloomy Support</div>
+              <div style={{fontSize:'.75rem',opacity:.85}}>Usually replies within minutes</div>
+            </div>
+            <button onClick={()=>setOpen(false)} style={{background:'none',border:'none',cursor:'pointer',color:'white',padding:'.25rem'}}><Icon name="x" style={{width:'18px',height:'18px'}}/></button>
+          </div>
+          <div className="chat-panel-body scrollbar-hide">
+            {msgs.map((m,i)=><div key={i} className={`chat-bubble ${m.from}`}>{m.text}</div>)}
+          </div>
+          <div style={{padding:'0 1rem .5rem'}}>
+            <p style={{fontSize:'.75rem',color:'#6b7280',marginBottom:'.5rem',fontWeight:'600'}}>Common questions:</p>
+            <div className="chat-quick-replies">
+              {qaList.map((qa,i)=><button key={i} className="quick-reply-btn" onClick={()=>addReply(qa.q,qa.a)}>{qa.q}</button>)}
+            </div>
+          </div>
+          <div className="chat-panel-footer">
+            <a href={waLink} target="_blank" rel="noopener noreferrer" className="whatsapp-chat-btn" style={{textDecoration:'none'}}>
+              <Icon name="message-circle" style={{width:'16px',height:'16px'}}/>Chat on WhatsApp
+            </a>
+          </div>
+        </div>
+      )}
+      <div style={{position:'relative'}}>
+        {!open&&showed&&<div style={{position:'absolute',top:'-2.5rem',right:'0',background:'#064e3b',color:'white',padding:'.4rem .875rem',borderRadius:'9999px',fontSize:'.8rem',fontWeight:'600',whiteSpace:'nowrap',boxShadow:'0 2px 8px rgba(0,0,0,.2)',animation:'fadeInUp .4s ease'}}>Need help? 🌿</div>}
+        <button className="chat-btn" onClick={()=>setOpen(!open)}>
+          <Icon name={open?'x':'message-circle'} style={{width:'26px',height:'26px',color:'white'}}/>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ===== ADMIN PANEL =====
+function AdminPanel({products,categories,blogs,videos,testimonials,subscribers,settings,onSettingsChange,onEditProduct,onAddProduct,onDeleteProduct,onAddCategory,onDeleteCategory,onSaveBlog,onDeleteBlog,onSaveVideo,onDeleteVideo,onSaveTestimonial,onDeleteTestimonial,onClearSubscribers,onExitAdmin,onLogout,showToast}) {
+  const [tab,setTab] = React.useState('dashboard');
+  const [showBlogForm,setShowBlogForm] = React.useState(false);
+  const [editingBlog,setEditingBlog] = React.useState(null);
+  const [showVideoForm,setShowVideoForm] = React.useState(false);
+  const [editingVideo,setEditingVideo] = React.useState(null);
+  const [showTestiForm,setShowTestiForm] = React.useState(false);
+  const [editingTesti,setEditingTesti] = React.useState(null);
+  const [newCat,setNewCat] = React.useState('');
+  const [localSettings,setLocalSettings] = React.useState(settings);
+
+  const saveSetting = (path,val) => {
+    const parts = path.split('.');
+    if(parts.length===1){ const s={...localSettings,[path]:val}; setLocalSettings(s); onSettingsChange(s); }
+    else { const s={...localSettings,[parts[0]]:{...localSettings[parts[0]],[parts[1]]:val}}; setLocalSettings(s); onSettingsChange(s); }
+  };
+
+  const tabs = [
+    {id:'dashboard',label:'Dashboard',icon:'layout-dashboard'},
+    {id:'products',label:'Products',icon:'package'},
+    {id:'categories',label:'Categories',icon:'tag'},
+    {id:'blog',label:'Blog',icon:'book-open'},
+    {id:'videos',label:'Videos',icon:'video'},
+    {id:'testimonials',label:'Testimonials',icon:'message-square'},
+    {id:'subscribers',label:'Subscribers',icon:'mail'},
+    {id:'settings',label:'Settings',icon:'settings'},
+  ];
+
+  return (
+    <div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'1.5rem',flexWrap:'wrap',gap:'1rem'}}>
+        <div>
+          <h2 className="font-display" style={{fontSize:'2rem',fontWeight:'700',color:'#064e3b'}}>Admin Dashboard</h2>
+          <p style={{color:'#6b7280',marginTop:'.2rem',fontSize:'.9rem'}}>Manage your store, content, and settings</p>
+        </div>
+        <div style={{display:'flex',gap:'.75rem',flexWrap:'wrap'}}>
+          <button onClick={onExitAdmin} className="btn btn-secondary" style={{fontSize:'.85rem'}}>
+            <Icon name="arrow-left" style={{width:'16px',height:'16px'}}/>Back to Store
+          </button>
+          <button onClick={()=>{if(window.confirm('Log out of the admin panel?'))onLogout();}} className="btn btn-danger" style={{fontSize:'.85rem'}}>
+            <Icon name="log-out" style={{width:'16px',height:'16px'}}/>Logout
+          </button>
+        </div>
+      </div>
+
+      <div className="admin-tabs scrollbar-hide">
+        {tabs.map(t=><button key={t.id} className={`admin-tab ${tab===t.id?'active':''}`} onClick={()=>setTab(t.id)}>
+          <Icon name={t.icon} style={{width:'14px',height:'14px'}}/>{t.label}
+        </button>)}
+      </div>
+
+      {/* DASHBOARD */}
+      {tab==='dashboard'&&(
+        <div>
+          <div className="stats-grid">
+            {[{n:products.length,l:'Products',ic:'package'},{n:blogs.length,l:'Blog Posts',ic:'book-open'},{n:videos.length,l:'Videos',ic:'video'},{n:testimonials.length,l:'Testimonials',ic:'message-square'},{n:subscribers.length,l:'Subscribers',ic:'mail'},{n:categories.length,l:'Categories',ic:'tag'}].map(s=>(
+              <div key={s.l} className="stat-card">
+                <Icon name={s.ic} style={{width:'22px',height:'22px',color:'#059669',margin:'0 auto .5rem',display:'block'}}/>
+                <div className="stat-number">{s.n}</div>
+                <div className="stat-label">{s.l}</div>
+              </div>
+            ))}
+          </div>
+          <div className="settings-card">
+            <h3><Icon name="info" style={{width:'16px',height:'16px'}}/>Quick Guide</h3>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'1rem'}}>
+              {[['🔗 Secret Admin Access','Add #admin to your URL or triple-click the logo'],['💱 Currency','Switch between USD and KES in Settings'],['💳 Payment','Add your payment link in Settings'],['📹 Videos','Paste YouTube or Vimeo links'],['📝 Blog','Write full posts with cover images'],['⭐ Testimonials','Add customer reviews to display on the shop']].map(([t,d])=>(
+                <div key={t} style={{background:'#f9fafb',borderRadius:'.75rem',padding:'1rem'}}>
+                  <div style={{fontWeight:'700',fontSize:'.875rem',color:'#111827',marginBottom:'.25rem'}}>{t}</div>
+                  <div style={{fontSize:'.8rem',color:'#6b7280'}}>{d}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PRODUCTS */}
+      {tab==='products'&&(
+        <div>
+          <div className="admin-header">
+            <h3 className="font-display" style={{fontSize:'1.4rem',fontWeight:'700',color:'#064e3b'}}>Products ({products.length})</h3>
+            <button onClick={onAddProduct} className="btn btn-primary"><Icon name="plus" style={{width:'18px',height:'18px'}}/>Add Product</button>
+          </div>
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Rating</th><th>Featured</th><th>Actions</th></tr></thead>
+              <tbody>
+                {products.map(p=>(
+                  <tr key={p.id}>
+                    <td><img src={p.image} alt={p.name} className="admin-product-image"/></td>
+                    <td style={{fontWeight:'500',color:'#111827'}}>{p.name}</td>
+                    <td style={{color:'#374151'}}>{p.category}</td>
+                    <td style={{color:'#059669',fontWeight:'600'}}>${p.price}</td>
+                    <td><div style={{display:'flex',alignItems:'center'}}><Icon name="star" style={{width:'14px',height:'14px',color:'#f59e0b',fill:'#f59e0b',marginRight:'.25rem'}}/>{p.rating}</div></td>
+                    <td>{p.featured?<span className="badge badge-featured">Yes</span>:<span className="badge" style={{background:'#f3f4f6',color:'#6b7280'}}>No</span>}</td>
+                    <td><div style={{display:'flex',gap:'.5rem'}}>
+                      <button onClick={()=>onEditProduct(p)} className="action-button edit"><Icon name="edit-2" style={{width:'18px',height:'18px',color:'#2563eb'}}/></button>
+                      <button onClick={()=>onDeleteProduct(p.id)} className="action-button delete"><Icon name="trash-2" style={{width:'18px',height:'18px',color:'#dc2626'}}/></button>
+                    </div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* CATEGORIES */}
+      {tab==='categories'&&(
+        <div>
+          <div className="admin-header"><h3 className="font-display" style={{fontSize:'1.4rem',fontWeight:'700',color:'#064e3b'}}>Product Categories</h3></div>
+          <div className="settings-card">
+            <h3><Icon name="tag" style={{width:'16px',height:'16px'}}/>Manage Categories</h3>
+            <p style={{color:'#6b7280',fontSize:'.875rem',marginBottom:'1rem'}}>These categories appear in the shop filter and product form.</p>
+            <div style={{marginBottom:'1rem'}}>{categories.map(c=><span key={c} className="category-tag">{c}<button onClick={()=>onDeleteCategory(c)}><Icon name="x" style={{width:'11px',height:'11px'}}/></button></span>)}</div>
+            <div className="add-category-form">
+              <input type="text" placeholder="New category name..." value={newCat} onChange={e=>setNewCat(e.target.value)} className="add-category-input" onKeyDown={e=>{if(e.key==='Enter'&&newCat.trim()){onAddCategory(newCat.trim());setNewCat('');}}}/>
+              <button className="btn btn-primary" onClick={()=>{if(newCat.trim()){onAddCategory(newCat.trim());setNewCat('');}}}>
+                <Icon name="plus" style={{width:'16px',height:'16px'}}/>Add
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BLOG */}
+      {tab==='blog'&&(
+        <div>
+          <div className="admin-header">
+            <h3 className="font-display" style={{fontSize:'1.4rem',fontWeight:'700',color:'#064e3b'}}>Blog Posts ({blogs.length})</h3>
+            <button onClick={()=>{setEditingBlog(null);setShowBlogForm(true);}} className="btn btn-primary"><Icon name="plus" style={{width:'18px',height:'18px'}}/>New Post</button>
+          </div>
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead><tr><th>Cover</th><th>Title & Excerpt</th><th>Author</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody>
+                {blogs.length===0?<tr><td colSpan="5" style={{textAlign:'center',padding:'3rem',color:'#9ca3af'}}>No posts yet. Click "New Post".</td></tr>:blogs.map(b=>(
+                  <tr key={b.id}>
+                    <td>{b.image?<img src={b.image} alt={b.title} style={{width:'5rem',height:'3.25rem',objectFit:'cover',borderRadius:'.5rem'}} onError={e=>e.target.style.display='none'}/>:<div style={{width:'5rem',height:'3.25rem',background:'#d1fae5',borderRadius:'.5rem',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="book-open" style={{width:'18px',height:'18px',color:'#059669'}}/></div>}</td>
+                    <td style={{maxWidth:'18rem'}}><div style={{fontWeight:'500',color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.title}</div><div style={{fontSize:'.75rem',color:'#9ca3af',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:'.2rem'}}>{b.excerpt}</div></td>
+                    <td>{b.author}</td>
+                    <td style={{color:'#6b7280'}}>{formatDate(b.date)}</td>
+                    <td><div style={{display:'flex',gap:'.5rem'}}>
+                      <button onClick={()=>{setEditingBlog(b);setShowBlogForm(true);}} className="action-button edit"><Icon name="edit-2" style={{width:'18px',height:'18px',color:'#2563eb'}}/></button>
+                      <button onClick={()=>onDeleteBlog(b.id)} className="action-button delete"><Icon name="trash-2" style={{width:'18px',height:'18px',color:'#dc2626'}}/></button>
+                    </div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {showBlogForm&&<BlogForm blog={editingBlog} onSave={b=>{onSaveBlog(b);setShowBlogForm(false);}} onCancel={()=>setShowBlogForm(false)}/>}
+        </div>
+      )}
+
+      {/* VIDEOS */}
+      {tab==='videos'&&(
+        <div>
+          <div className="admin-header">
+            <h3 className="font-display" style={{fontSize:'1.4rem',fontWeight:'700',color:'#064e3b'}}>Videos ({videos.length})</h3>
+            <button onClick={()=>{setEditingVideo(null);setShowVideoForm(true);}} className="btn btn-primary"><Icon name="plus" style={{width:'18px',height:'18px'}}/>Add Video</button>
+          </div>
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead><tr><th>Thumb</th><th>Title & Description</th><th>URL</th><th>Featured</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody>
+                {videos.length===0?<tr><td colSpan="6" style={{textAlign:'center',padding:'3rem',color:'#9ca3af'}}>No videos yet. Click "Add Video".</td></tr>:videos.map(v=>{
+                  const info=extractVideo(v.url);
+                  return (
+                    <tr key={v.id}>
+                      <td>{info?.thumb?<img src={info.thumb} alt={v.title} style={{width:'5rem',height:'3.25rem',objectFit:'cover',borderRadius:'.5rem'}}/>:<div style={{width:'5rem',height:'3.25rem',background:'#064e3b',borderRadius:'.5rem',display:'flex',alignItems:'center',justifyContent:'center'}}><Icon name="film" style={{width:'18px',height:'18px',color:'rgba(255,255,255,.6)'}}/></div>}</td>
+                      <td style={{maxWidth:'14rem'}}><div style={{fontWeight:'500',color:'#111827',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{v.title}</div><div style={{fontSize:'.75rem',color:'#9ca3af',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',marginTop:'.2rem'}}>{v.description}</div></td>
+                      <td><a href={v.url} target="_blank" rel="noopener noreferrer" style={{color:'#059669',fontSize:'.8rem',textDecoration:'none',display:'flex',alignItems:'center',gap:'.25rem'}}><Icon name="external-link" style={{width:'12px',height:'12px'}}/>Link</a></td>
+                      <td>{v.featured?<span className="badge badge-featured">Yes</span>:<span className="badge" style={{background:'#f3f4f6',color:'#6b7280'}}>No</span>}</td>
+                      <td style={{color:'#6b7280'}}>{formatDate(v.date)}</td>
+                      <td><div style={{display:'flex',gap:'.5rem'}}>
+                        <button onClick={()=>{setEditingVideo(v);setShowVideoForm(true);}} className="action-button edit"><Icon name="edit-2" style={{width:'18px',height:'18px',color:'#2563eb'}}/></button>
+                        <button onClick={()=>onDeleteVideo(v.id)} className="action-button delete"><Icon name="trash-2" style={{width:'18px',height:'18px',color:'#dc2626'}}/></button>
+                      </div></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {showVideoForm&&<VideoForm video={editingVideo} onSave={v=>{onSaveVideo(v);setShowVideoForm(false);}} onCancel={()=>setShowVideoForm(false)}/>}
+        </div>
+      )}
+
+      {/* TESTIMONIALS */}
+      {tab==='testimonials'&&(
+        <div>
+          <div className="admin-header">
+            <h3 className="font-display" style={{fontSize:'1.4rem',fontWeight:'700',color:'#064e3b'}}>Testimonials ({testimonials.length})</h3>
+            <button onClick={()=>{setEditingTesti(null);setShowTestiForm(true);}} className="btn btn-primary"><Icon name="plus" style={{width:'18px',height:'18px'}}/>Add Testimonial</button>
+          </div>
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead><tr><th>Name</th><th>Location</th><th>Rating</th><th>Review</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody>
+                {testimonials.length===0?<tr><td colSpan="6" style={{textAlign:'center',padding:'3rem',color:'#9ca3af'}}>No testimonials yet.</td></tr>:testimonials.map(t=>(
+                  <tr key={t.id}>
+                    <td style={{fontWeight:'500',color:'#111827'}}>{t.name}</td>
+                    <td style={{color:'#374151'}}>{t.location}</td>
+                    <td><div style={{display:'flex',gap:'2px'}}>{[...Array(5)].map((_,i)=><Icon key={i} name="star" style={{width:'13px',height:'13px',color:i<t.rating?'#f59e0b':'#d1d5db',fill:i<t.rating?'#f59e0b':'none'}}/>)}</div></td>
+                    <td style={{maxWidth:'16rem'}}><div style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:'.85rem',color:'#6b7280'}}>"{t.text}"</div></td>
+                    <td style={{color:'#6b7280'}}>{formatDate(t.date)}</td>
+                    <td><div style={{display:'flex',gap:'.5rem'}}>
+                      <button onClick={()=>{setEditingTesti(t);setShowTestiForm(true);}} className="action-button edit"><Icon name="edit-2" style={{width:'18px',height:'18px',color:'#2563eb'}}/></button>
+                      <button onClick={()=>onDeleteTestimonial(t.id)} className="action-button delete"><Icon name="trash-2" style={{width:'18px',height:'18px',color:'#dc2626'}}/></button>
+                    </div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {showTestiForm&&<TestimonialForm testi={editingTesti} onSave={t=>{onSaveTestimonial(t);setShowTestiForm(false);}} onCancel={()=>setShowTestiForm(false)}/>}
+        </div>
+      )}
+
+      {/* SUBSCRIBERS */}
+      {tab==='subscribers'&&(
+        <div>
+          <div className="admin-header">
+            <h3 className="font-display" style={{fontSize:'1.4rem',fontWeight:'700',color:'#064e3b'}}>Subscribers & Newsletter</h3>
+            {subscribers.length>0&&(
+              <div style={{display:'flex',gap:'.75rem',flexWrap:'wrap'}}>
+                <button className="btn btn-secondary" style={{fontSize:'.85rem'}} onClick={()=>{navigator.clipboard.writeText(subscribers.map(s=>s.email).join(', '));showToast('Emails copied!');}}>
+                  <Icon name="copy" style={{width:'16px',height:'16px'}}/>Copy All Emails
+                </button>
+                <button className="btn btn-danger" style={{fontSize:'.85rem'}} onClick={onClearSubscribers}>
+                  <Icon name="trash-2" style={{width:'16px',height:'16px'}}/>Clear All
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* NEWSLETTER COMPOSER */}
+          <NewsletterComposer subscribers={subscribers} settings={localSettings} showToast={showToast}/>
+
+          {/* SUBSCRIBER LIST */}
+          <h4 className="font-display" style={{fontSize:'1.1rem',fontWeight:'700',color:'#064e3b',margin:'2rem 0 1rem',display:'flex',alignItems:'center',gap:'.5rem'}}>
+            <Icon name="users" style={{width:'18px',height:'18px'}}/>Subscriber List ({subscribers.length})
+          </h4>
+          <div className="admin-table-container">
+            <table className="admin-table">
+              <thead><tr><th>#</th><th>Email Address</th><th>Date Subscribed</th></tr></thead>
+              <tbody>
+                {subscribers.length===0
+                  ? <tr><td colSpan="3" style={{textAlign:'center',padding:'3rem',color:'#9ca3af'}}>No subscribers yet.</td></tr>
+                  : subscribers.map((s,i)=>(
+                    <tr key={i}>
+                      <td style={{color:'#9ca3af'}}>{i+1}</td>
+                      <td style={{fontWeight:'500',color:'#111827'}}>{s.email}</td>
+                      <td style={{color:'#6b7280'}}>{formatDate(s.date)}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* SETTINGS */}
+      {tab==='settings'&&(
+        <SettingsTab settings={localSettings} onSave={(section,data)=>{
+          const merged = {...localSettings,[section]:{...(localSettings[section]||{}), ...data}};
+          // flat keys (currency, paymentLink, adminPassword) come in as section=key, data=value
+          const flat = ['currency','paymentLink','adminPassword'];
+          const updated = flat.includes(section) ? {...localSettings,[section]:data} : merged;
+          setLocalSettings(updated); onSettingsChange(updated); showToast('Settings saved ✓');
+        }} showToast={showToast}/>
+      )}
+    </div>
+  );
+}
+
+// ===== NEWSLETTER COMPOSER =====
+function NewsletterComposer({subscribers, settings, showToast}) {
+  const ak = settings?.apiKeys || {};
+  const anthropicKey  = ak.anthropicKey  || '';
+  const ejsServiceId  = ak.ejsServiceId  || '';
+  const ejsTemplateId = ak.ejsTemplateId || '';
+  const ejsPublicKey  = ak.ejsPublicKey  || '';
+  const ejsReady = ejsServiceId && ejsTemplateId && ejsPublicKey;
+
+  const [subject,   setSubject]   = React.useState('');
+  const [body,      setBody]      = React.useState('');
+  const [preview,   setPreview]   = React.useState(false);
+  const [aiTopic,   setAiTopic]   = React.useState('');
+  const [aiLoading, setAiLoading] = React.useState(false);
+  const [sending,   setSending]   = React.useState(false);
+  const [sentCount, setSentCount] = React.useState(0);
+  const [sendDone,  setSendDone]  = React.useState(false);
+  const [templateMode, setTemplateMode] = React.useState(false);
+
+  const emails = subscribers.map(s => s.email);
+  const count  = emails.length;
+
+  // Init EmailJS whenever public key changes
+  React.useEffect(() => {
+    if(ejsPublicKey && window.emailjs) window.emailjs.init({publicKey: ejsPublicKey});
+  }, [ejsPublicKey]);
+
+  const copyEmails = () => {
+    navigator.clipboard.writeText(emails.join(', '));
+    showToast(`${count} email${count!==1?'s':''} copied!`);
+  };
+
+  // Build a personalised one-click unsubscribe URL — always uses remedybloomy.xo.je
+  const makeUnsubLink = (email) => {
+    try {
+      const u = new URL(window.SITE_URL);
+      const binId = window.CloudSync.getBinId();
+      if (binId) u.searchParams.set('bin', binId);
+      u.searchParams.set('unsubscribe', btoa(email));
+      return u.toString();
+    } catch(_){ return window.SITE_URL + '?unsubscribe=' + btoa(email); }
+  };
+
+  // Append unsubscribe footer to body for a specific recipient
+  const withUnsub = (emailBody, recipientEmail) => {
+    const link = makeUnsubLink(recipientEmail);
+    return emailBody.trimEnd() + `
+
+---
+To unsubscribe from future emails, click here:
+${link}`;
+  };
+
+  // Free email templates
+  const templates = {
+    wellness: {
+      subject: '🌿 This Week\'s Wellness Tips from RemedyBloomy',
+      body: `We hope you're enjoying great health!\n\nThis week we're excited to share some of our favorite wellness tips with you.\n\n✨ Benefits of incorporating natural remedies into your daily routine:\n• Improved overall wellness\n• Better sleep quality  \n• Natural energy boost\n• Supports immune health\n\nDiscover our latest products and exclusive subscriber offers below!\n\nWarm regards,\nRemedyBloomy Team\nhttps://remedybloomy.com`
+    },
+    featured: {
+      subject: '✨ Featured: Our Best-Selling Natural Remedies',
+      body: `Hello Wellness Enthusiast,\n\nWe wanted to share some of our most beloved products that are making a real difference for our community.\n\n⭐ Top picks this month:\n• Premium Essential Oils\n• Herbal Tea Collections\n• Natural Skincare Range\n\nEach product is carefully sourced for quality and purity. Subscribers enjoy exclusive discounts!\n\nExplore now and transform your wellness journey.\n\nBest wishes,\nRemedyBloomy Team\nhttps://remedybloomy.com`
+    },
+    seasonal: {
+      subject: '🍂 Seasonal Wellness Guide for Better Health',
+      body: `Dear RemedyBloomy Community,\n\nAs the seasons change, so do our wellness needs. We've curated a special collection for this season.\n\n🌟 Our recommendations:\n• Immune-supporting blends\n• Seasonal essential oils\n• Transitional wellness packages\n\nTake advantage of limited-time offers exclusive to our newsletter subscribers!\n\nHere's to vibrant health,\nRemedyBloomy Team\nhttps://remedybloomy.com`
+    },
+    announcement: {
+      subject: '📢 Important Update from RemedyBloomy',
+      body: `Hello valued subscriber,\n\nWe're thrilled to announce some exciting updates to our RemedyBloomy family!\n\n🎉 What's new:\n• New product launches\n• Enhanced service offerings\n• Community initiatives\n\nStay tuned for more information. We appreciate your continued trust and support.\n\nThank you,\nRemedyBloomy Team\nhttps://remedybloomy.com`
+    }
+  };
+
+  const applyTemplate = (key) => {
+    const t = templates[key];
+    setSubject(t.subject);
+    setBody(t.body);
+    setTemplateMode(false);
+    showToast('Template applied! You can customize it further.');
+  };
+
+  // ── AI generation via Anthropic API ──
+  const generateWithAI = async () => {
+    if(!aiTopic.trim()){ showToast('Enter a topic first.'); return; }
+    if(!anthropicKey){ showToast('Add your Anthropic API key in Settings → API Keys first.'); return; }
+    setAiLoading(true);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 900,
+          messages: [{
+            role: 'user',
+            content: `You are a wellness email copywriter for RemedyBloomy natural remedies store.
+Write a newsletter email about: "${aiTopic}".
+Reply with ONLY a raw JSON object, no markdown, no explanation:
+{"subject":"catchy subject with emoji","body":"email body starting with We hope you're enjoying great health!\\n\\n and ending with \\n\\nWarm regards,\\nRemedyBloomy Team\\nhttps://remedybloomy.com\\n\\n---\\nTo unsubscribe from future emails, click the personal unsubscribe link included in your copy of this email. — max 200 words"}`
+          }]
+        })
+      });
+      if(!res.ok) { const err=await res.json(); throw new Error(err.error?.message||res.status); }
+      const data  = await res.json();
+      const raw   = (data.content||[]).map(c=>c.text||'').join('').trim();
+      const clean = raw.replace(/^```[\w]*\n?/,'').replace(/\n?```$/,'').trim();
+      const parsed = JSON.parse(clean);
+      if(parsed.subject) setSubject(parsed.subject);
+      if(parsed.body)    setBody(parsed.body);
+      showToast('✨ AI draft ready! Customize and send.');
+    } catch(e) {
+      showToast('AI failed: ' + (e.message||'check your API key in Settings → API Keys'));
+    }
+    setAiLoading(false);
+  };
+
+  // ── Send via EmailJS (one per subscriber) or Gmail fallback ──
+  const handleSend = async () => {
+    if(!count)                        { showToast('No subscribers yet!'); return; }
+    if(!subject.trim()||!body.trim()) { showToast('Fill in subject and message.'); return; }
+    if(!ejsReady) {
+      navigator.clipboard.writeText(emails.join(', ')).catch(()=>{});
+      // Gmail BCC can't personalise, so add a generic unsubscribe instruction
+      const unsubInstructions = `\n\n---\nTo unsubscribe, visit: ${window.SITE_URL} and use the Unsubscribe option in the newsletter section, or reply with "unsubscribe" in the subject.`;
+      const gmailBody = body.trimEnd() + unsubInstructions;
+      const url = `https://mail.google.com/mail/?view=cm&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(gmailBody)}`;
+      window.open(url, '_blank');
+      showToast('📧 Gmail opened — subscriber emails copied, paste into BCC');
+      return;
+    }
+    setSending(true); setSentCount(0);
+    let ok = 0;
+    for(const email of emails) {
+      try {
+        await window.emailjs.send(ejsServiceId, ejsTemplateId, {
+          to_email:  email,
+          subject:   subject,
+          message:   withUnsub(body, email),
+          from_name: 'RemedyBloomy'
+        });
+        ok++;
+        setSentCount(ok);
+      } catch(err) { console.warn('EmailJS failed for', email, err); }
+    }
+    setSending(false);
+    setSendDone(true);
+    showToast(ok > 0 ? `✅ Sent to ${ok} subscriber${ok!==1?'s':''}!` : 'Send failed — check EmailJS settings.');
+  };
+
+  const reset = () => { setSubject(''); setBody(''); setAiTopic(''); setPreview(false); setSendDone(false); setSentCount(0); };
+
+  if(sending) return (
+    <div className="settings-card" style={{textAlign:'center',padding:'3rem 2rem'}}>
+      <div style={{width:'60px',height:'60px',border:'5px solid #e5e7eb',borderTop:'5px solid #059669',borderRadius:'50%',margin:'0 auto 1.5rem',animation:'spin .9s linear infinite'}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <h3 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.6rem',color:'#064e3b',marginBottom:'.5rem'}}>Sending newsletters…</h3>
+      <p style={{color:'#6b7280'}}>{sentCount} of {count} delivered</p>
+      <div style={{marginTop:'1rem',background:'#e5e7eb',borderRadius:'9999px',height:'6px',overflow:'hidden',maxWidth:'260px',margin:'1rem auto 0'}}>
+        <div style={{height:'100%',background:'#059669',borderRadius:'9999px',width:`${Math.round((sentCount/count)*100)}%`,transition:'width .4s'}}/>
+      </div>
+    </div>
+  );
+
+  if(sendDone) return (
+    <div className="settings-card" style={{textAlign:'center',padding:'3rem 2rem'}}>
+      <div style={{width:'72px',height:'72px',borderRadius:'50%',background:'linear-gradient(135deg,#047857,#059669)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 1.25rem',boxShadow:'0 8px 32px rgba(5,150,105,.3)'}}>
+        <Icon name="check" style={{width:'36px',height:'36px',color:'white'}}/>
+      </div>
+      <h3 style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'1.8rem',color:'#064e3b',marginBottom:'.375rem'}}>Newsletter Sent! 🌿</h3>
+      <p style={{color:'#6b7280',marginBottom:'1.5rem'}}>Delivered to <strong style={{color:'#059669'}}>{sentCount}</strong> subscriber{sentCount!==1?'s':''}.</p>
+      <button onClick={reset} className="btn btn-primary"><Icon name="plus" style={{width:'16px',height:'16px'}}/>Compose Another</button>
+    </div>
+  );
+
+  return (
+    <div className="settings-card" style={{marginBottom:'1.5rem'}}>
+      <h3 style={{marginBottom:'1rem'}}><Icon name="send" style={{width:'18px',height:'18px'}}/>Compose & Send Newsletter</h3>
+
+      {/* Config status banners */}
+      {(!anthropicKey || !ejsReady) && (
+        <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:'.75rem',padding:'1rem 1.25rem',marginBottom:'1.25rem'}}>
+          <p style={{fontWeight:'700',color:'#92400e',fontSize:'.875rem',marginBottom:'.375rem',display:'flex',alignItems:'center',gap:'.375rem'}}>
+            <Icon name="settings" style={{width:'14px',height:'14px'}}/>Setup options in Settings → API Keys
+          </p>
+          <ul style={{color:'#78350f',fontSize:'.8rem',lineHeight:'1.8',paddingLeft:'1.1rem',margin:0}}>
+            {!anthropicKey && <li><strong>Anthropic API Key</strong> — enables AI newsletter drafting (optional, use templates instead)</li>}
+            {!ejsReady     && <li><strong>EmailJS credentials</strong> — enables direct sending. Without it, you'll use Gmail compose.</li>}
+          </ul>
+        </div>
+      )}
+
+      {/* Subscriber count */}
+      {count===0 ? (
+        <div style={{background:'#fef3c7',borderRadius:'.75rem',padding:'1rem 1.25rem',display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.25rem'}}>
+          <Icon name="alert-circle" style={{width:'20px',height:'20px',color:'#d97706',flexShrink:0}}/>
+          <p style={{color:'#92400e',fontSize:'.875rem'}}>No subscribers yet — share your newsletter signup link to get started!</p>
+        </div>
+      ) : (
+        <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'.75rem',padding:'1rem 1.25rem',display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1.25rem',flexWrap:'wrap'}}>
+          <Icon name="users" style={{width:'20px',height:'20px',color:'#059669',flexShrink:0}}/>
+          <p style={{color:'#065f46',fontSize:'.875rem',fontWeight:'600',flex:1}}>{count} subscriber{count!==1?'s':''} will receive this newsletter.</p>
+          <button onClick={copyEmails} style={{background:'none',border:'1px solid #059669',color:'#059669',borderRadius:'9999px',padding:'.25rem .75rem',fontSize:'.75rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}>Copy Emails</button>
+        </div>
+      )}
+
+      {/* Template Quick Actions */}
+      <div style={{background:'#f0f9f6',border:'1px solid #bbf7d0',borderRadius:'.75rem',padding:'1rem 1.25rem',marginBottom:'1.25rem'}}>
+        <p style={{fontSize:'.8rem',fontWeight:'700',color:'#065f46',marginBottom:'.75rem',display:'flex',alignItems:'center',gap:'.375rem'}}>
+          <Icon name="layout-template" style={{width:'14px',height:'14px'}}/>Quick Templates
+        </p>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))',gap:'.5rem'}}>
+          {Object.keys(templates).map(key=>(
+            <button key={key} onClick={()=>applyTemplate(key)} 
+              style={{padding:'.5rem .75rem',background:'white',border:'1px solid #d1d5db',borderRadius:'.5rem',fontSize:'.75rem',fontWeight:'600',cursor:'pointer',color:'#059669',transition:'all .2s'}}
+              onMouseOver={e=>e.target.style.background='#f0fdf4'}
+              onMouseOut={e=>e.target.style.background='white'}>
+              {key.charAt(0).toUpperCase()+key.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* AI writer */}
+      <div style={{background:'linear-gradient(135deg,#f0fdf4,#fef9c3)',border:'1px solid #bbf7d0',borderRadius:'.75rem',padding:'1rem 1.25rem',marginBottom:'1.25rem'}}>
+        <p style={{fontSize:'.8rem',fontWeight:'700',color:'#065f46',marginBottom:'.625rem',display:'flex',alignItems:'center',gap:'.375rem'}}>
+          <Icon name="sparkles" style={{width:'14px',height:'14px',color:'#059669'}}/>AI Newsletter Writer {!anthropicKey&&<span style={{fontWeight:'400',color:'#d97706'}}>(add API key in Settings to enable)</span>}
+        </p>
+        <div style={{display:'flex',gap:'.625rem',flexWrap:'wrap'}}>
+          <input type="text" value={aiTopic} onChange={e=>setAiTopic(e.target.value)}
+            placeholder="e.g., lavender oil, activated charcoal, immune boosting…"
+            className="form-input" style={{flex:1,minWidth:'180px',marginBottom:0}}
+            onKeyDown={e=>e.key==='Enter'&&generateWithAI()}/>
+          <button onClick={generateWithAI} disabled={aiLoading||!anthropicKey} className="btn btn-primary"
+            style={{whiteSpace:'nowrap',opacity:(aiLoading||!anthropicKey)?.6:1}}>
+            {aiLoading ? <><Icon name="loader" style={{width:'14px',height:'14px'}}/>Writing…</> : <><Icon name="sparkles" style={{width:'14px',height:'14px'}}/>Generate</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Subject */}
+      <div className="form-group">
+        <label className="form-label">Subject Line</label>
+        <input type="text" value={subject} onChange={e=>setSubject(e.target.value)} className="form-input" placeholder="🌿 This Week's Wellness Tips from RemedyBloomy"/>
+      </div>
+
+      {/* Body */}
+      <div className="form-group" style={{marginBottom:'1.25rem'}}>
+        <label className="form-label">Message Body</label>
+        <textarea value={body} onChange={e=>setBody(e.target.value)} className="form-textarea" rows="10"
+          placeholder={`We hope you're enjoying great health!\n\nThis week we're sharing...\n\nWarm regards,\nRemedyBloomy Team\nhttps://remedybloomy.com`}/>
+      </div>
+
+      {/* Preview */}
+      {body&&(
+        <div style={{marginBottom:'1.25rem'}}>
+          <button onClick={()=>setPreview(!preview)} style={{background:'none',border:'none',cursor:'pointer',color:'#059669',fontSize:'.85rem',fontWeight:'600',display:'flex',alignItems:'center',gap:'.375rem',padding:0}}>
+            <Icon name={preview?'eye-off':'eye'} style={{width:'15px',height:'15px'}}/>{preview?'Hide':'Show'} Email Preview
+          </button>
+          {preview&&(
+            <div style={{marginTop:'1rem',border:'2px solid #e5e7eb',borderRadius:'.75rem',overflow:'hidden',background:'white'}}>
+              <div style={{background:'#064e3b',color:'white',padding:'1rem 1.25rem',fontSize:'.8rem',fontWeight:'600'}}><strong>Subject:</strong> {subject||'(no subject)'}</div>
+              <div style={{padding:'1.75rem',fontFamily:'Georgia,serif',fontSize:'.95rem',lineHeight:'1.8',color:'#1f2937',whiteSpace:'pre-wrap',maxHeight:'320px',overflowY:'auto'}}>{body}</div>
+              <div style={{background:'#f9fafb',padding:'1rem 1.25rem',fontSize:'.75rem',color:'#6b7280',borderTop:'1px solid #e5e7eb',display:'flex',alignItems:'center',gap:'.5rem'}}>
+                <Icon name="users" style={{width:'14px',height:'14px'}}/>To {count} subscriber{count!==1?'s':''}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Unsubscribe notice */}
+      {(subject||body)&&(
+        <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'.75rem',padding:'.75rem 1rem',marginBottom:'1rem',display:'flex',gap:'.625rem',alignItems:'flex-start'}}>
+          <Icon name="link" style={{width:'15px',height:'15px',color:'#059669',flexShrink:0,marginTop:'2px'}}/>
+          <p style={{fontSize:'.78rem',color:'#065f46',lineHeight:'1.5',margin:0}}>
+            <strong>Unsubscribe link auto-added.</strong> Each recipient's copy will include a personalised one-click unsubscribe link at the bottom. Clicking it instantly removes them from your list.
+          </p>
+        </div>
+      )}
+      {/* Send */}
+      <button onClick={handleSend} className="btn btn-primary"
+        disabled={!subject.trim()||!body.trim()||!count}
+        style={{opacity:(!subject.trim()||!body.trim()||!count)?.4:1,cursor:(!subject.trim()||!body.trim()||!count)?'not-allowed':'pointer',fontSize:'1rem',padding:'.875rem 2rem',width:'100%'}}>
+        <Icon name="send" style={{width:'18px',height:'18px'}}/>
+        {ejsReady ? `Send to ${count} Subscriber${count!==1?'s':''}` : `Open Gmail for ${count} Subscriber${count!==1?'s':''}`}
+      </button>
+      {!ejsReady&&count>0&&subject&&body&&(
+        <p style={{fontSize:'.76rem',color:'#6b7280',marginTop:'.5rem',textAlign:'center'}}>💡 Add EmailJS credentials in Settings to send directly without Gmail.</p>
+      )}
+    </div>
+  );
+}
+
+// ===== SETTINGS TAB (per-section save) =====
+function SaveBtn({onClick,saved}) {
+  return (
+    <button onClick={onClick} className="btn btn-primary" style={{fontSize:'.85rem',padding:'.6rem 1.25rem',marginTop:'1rem'}}>
+      {saved
+        ? <><Icon name="check" style={{width:'15px',height:'15px'}}/>Saved!</>
+        : <><Icon name="save" style={{width:'15px',height:'15px'}}/>Save Changes</>}
+    </button>
+  );
+}
+
+function useSectionSave(initial,onSave) {
+  const [draft,setDraft] = React.useState(initial);
+  const [saved,setSaved] = React.useState(false);
+  const update = (k,v) => setDraft(d=>({...d,[k]:v}));
+  const save = () => { onSave(draft); setSaved(true); setTimeout(()=>setSaved(false),2000); };
+  return {draft,update,save,saved};
+}
+
+function SettingsTab({settings,onSave,showToast}) {
+  // ── Currency (immediate toggle, no draft needed) ──
+  const [currency,setCurrency] = React.useState(settings.currency);
+  const [currSaved,setCurrSaved] = React.useState(false);
+  const saveCurrency = (c) => { setCurrency(c); onSave('currency',c); setCurrSaved(true); setTimeout(()=>setCurrSaved(false),2000); };
+
+  // ── Payment link ──
+  const pay = useSectionSave({paymentLink:settings.paymentLink}, d=>onSave('paymentLink',d.paymentLink));
+
+  // ── Contact ──
+  const contact = useSectionSave({...settings.contact}, d=>onSave('contact',d));
+
+  // ── Social ──
+  const social = useSectionSave({...settings.social}, d=>onSave('social',d));
+
+  // ── Newsletter ──
+  const nl = useSectionSave({...settings.newsletter}, d=>onSave('newsletter',d));
+
+  // ── Chat ──
+  const chat = useSectionSave({...settings.chat}, d=>onSave('chat',d));
+
+  // ── API Keys ──
+  const apiK = useSectionSave({...settings.apiKeys}, d=>onSave('apiKeys',d));
+
+  // ── Cloud Sync state ──
+  const [binId, setBinId]         = React.useState(window.CloudSync.getBinId() || '');
+  const [binIdInput, setBinIdInput] = React.useState('');
+  const [activating, setActivating] = React.useState(false);
+  const [binCopied, setBinCopied] = React.useState(false);
+  const hardcoded = window.CloudSync.isHardcoded();
+
+  const copyBinId = () => {
+    const id = window.CloudSync.getBinId();
+    if (!id) return;
+    navigator.clipboard.writeText(id).catch(()=>{
+      const ta=document.createElement('textarea'); ta.value=id;
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    });
+    setBinCopied(true); setTimeout(()=>setBinCopied(false),2500);
+  };
+
+  const activateFromCode = () => {
+    const id = binIdInput.trim();
+    if (!id || id.length < 10) { showToast('Paste a valid Sync Code first.'); return; }
+    localStorage.setItem('rb_cloud_bin_id', id);
+    showToast('✅ Sync Code saved! Reloading to fetch your data…');
+    setBinId(id);
+    setBinIdInput('');
+    // Short delay so toast is visible, then reload to pull cloud data
+    setTimeout(() => window.location.reload(), 1200);
+  };
+
+  const activateNew = async () => {
+    setActivating(true);
+    showToast('Creating cloud storage… this takes a few seconds.');
+    // Trigger a save which will create the bin
+    onSave('currency', settings.currency);
+    // Poll until bin is created (save is async)
+    let tries = 0;
+    const poll = setInterval(()=>{
+      const id = window.CloudSync.getBinId();
+      if (id || tries++ > 10) {
+        clearInterval(poll);
+        setActivating(false);
+        if (id) { setBinId(id); showToast('☁️ Cloud sync activated! Copy your Sync Code below.'); }
+        else showToast('Could not create cloud storage. Check your internet connection.');
+      }
+    }, 800);
+  };
+
+  return (
+    <div style={{maxWidth:'48rem'}}>
+      <div className="admin-header"><h3 className="font-display" style={{fontSize:'1.4rem',fontWeight:'700',color:'#064e3b'}}>Store Settings</h3></div>
+
+      {/* Cloud Sync */}
+      <div className="settings-card" style={{background:'linear-gradient(135deg,#f0fdf4,#ecfdf5)',border:'1.5px solid #6ee7b7'}}>
+        <h3><Icon name="cloud" style={{width:'16px',height:'16px'}}/>☁️ Cross-Browser Sync</h3>
+
+        {!binId && !hardcoded ? (
+          /* ── Not yet set up ── */
+          <div>
+            <p style={{color:'#374151',fontSize:'.875rem',marginBottom:'1.25rem',lineHeight:'1.7'}}>
+              Your settings are currently saved <strong>only in this browser</strong>. Activate cloud sync so that opening <strong>https://remedybloomy.xo.je/</strong> on any browser or device always loads your latest admin settings automatically — no special URL needed.
+            </p>
+            <div style={{display:'grid',gap:'1rem'}}>
+              {/* Option A: Already have a Sync Code */}
+              <div style={{background:'white',border:'1px solid #d1d5db',borderRadius:'.875rem',padding:'1.125rem 1.25rem'}}>
+                <p style={{fontWeight:'700',color:'#064e3b',fontSize:'.9rem',marginBottom:'.625rem',display:'flex',alignItems:'center',gap:'.4rem'}}>
+                  <Icon name="key" style={{width:'15px',height:'15px',color:'#059669'}}/>Already have a Sync Code?
+                </p>
+                <div style={{display:'flex',gap:'.625rem',flexWrap:'wrap'}}>
+                  <input
+                    type="text" value={binIdInput} onChange={e=>setBinIdInput(e.target.value)}
+                    placeholder="Paste your Sync Code here…"
+                    className="form-input" style={{flex:1,marginBottom:0,fontFamily:'monospace',fontSize:'.85rem'}}
+                  />
+                  <button onClick={activateFromCode} className="btn btn-primary" style={{whiteSpace:'nowrap',fontSize:'.85rem'}}>
+                    <Icon name="check" style={{width:'14px',height:'14px'}}/>Apply &amp; Reload
+                  </button>
+                </div>
+              </div>
+              {/* Option B: First time — create new */}
+              <div style={{background:'white',border:'1px solid #d1d5db',borderRadius:'.875rem',padding:'1.125rem 1.25rem'}}>
+                <p style={{fontWeight:'700',color:'#064e3b',fontSize:'.9rem',marginBottom:'.5rem',display:'flex',alignItems:'center',gap:'.4rem'}}>
+                  <Icon name="plus-circle" style={{width:'15px',height:'15px',color:'#059669'}}/>First time? Create new cloud storage
+                </p>
+                <p style={{fontSize:'.8rem',color:'#6b7280',marginBottom:'.75rem',lineHeight:'1.6'}}>This creates a free permanent cloud bin. You'll get a Sync Code to save — paste it into any other browser to connect.</p>
+                <button onClick={activateNew} disabled={activating} className="btn btn-primary"
+                  style={{opacity:activating?.6:1,cursor:activating?'not-allowed':'pointer'}}>
+                  {activating
+                    ? <><Icon name="loader" style={{width:'15px',height:'15px'}}/>Creating…</>
+                    : <><Icon name="cloud" style={{width:'15px',height:'15px'}}/>Activate Cloud Sync</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* ── Already active ── */
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'.625rem',marginBottom:'1rem'}}>
+              <div style={{width:'10px',height:'10px',borderRadius:'50%',background:'#059669',flexShrink:0}}/>
+              <span style={{color:'#065f46',fontWeight:'700',fontSize:'.9rem'}}>Cloud sync active</span>
+              {hardcoded && <span style={{fontSize:'.75rem',background:'#dcfce7',color:'#166534',padding:'.15rem .6rem',borderRadius:'9999px',fontWeight:'600'}}>Permanent</span>}
+            </div>
+            <p style={{color:'#374151',fontSize:'.875rem',marginBottom:'1rem',lineHeight:'1.7'}}>
+              Your store data syncs to the cloud on every save. Opening <strong>https://remedybloomy.xo.je/</strong> on any browser loads your latest settings automatically — as long as you have the Sync Code entered in that browser at least once.
+            </p>
+            <div style={{background:'white',border:'1px solid #d1d5db',borderRadius:'.875rem',padding:'1rem 1.25rem',marginBottom:'1rem'}}>
+              <p style={{fontSize:'.8rem',fontWeight:'700',color:'#374151',marginBottom:'.625rem'}}>Your Sync Code <span style={{fontWeight:'400',color:'#9ca3af'}}>(save this somewhere safe)</span></p>
+              <div style={{display:'flex',gap:'.625rem',alignItems:'center',flexWrap:'wrap'}}>
+                <code style={{flex:1,background:'#f3f4f6',padding:'.5rem .875rem',borderRadius:'.5rem',fontSize:'.82rem',color:'#064e3b',wordBreak:'break-all'}}>{binId}</code>
+                <button onClick={copyBinId} className="btn btn-secondary" style={{whiteSpace:'nowrap',fontSize:'.82rem',padding:'.5rem 1rem'}}>
+                  {binCopied ? <><Icon name="check" style={{width:'13px',height:'13px'}}/>Copied!</> : <><Icon name="copy" style={{width:'13px',height:'13px'}}/>Copy</>}
+                </button>
+              </div>
+            </div>
+            <div style={{background:'#fef9c3',border:'1px solid #fde68a',borderRadius:'.75rem',padding:'.875rem 1rem'}}>
+              <p style={{fontSize:'.8rem',color:'#92400e',lineHeight:'1.6',margin:0}}>
+                <strong>Using a new browser?</strong> Open Admin → Settings and paste this Sync Code into the "Already have a Sync Code?" box. You only need to do this once per browser.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Currency */}
+      <div className="settings-card">
+        <h3><Icon name="coins" style={{width:'16px',height:'16px'}}/>Currency Display</h3>
+        <p style={{color:'#6b7280',fontSize:'.875rem',marginBottom:'1rem'}}>Choose which currency is shown <strong>first</strong> on the store. Both USD and KES are always displayed together on every product card and detail view.</p>
+        <div style={{display:'flex',alignItems:'center',gap:'1.25rem',flexWrap:'wrap',marginBottom:'.75rem'}}>
+          <div className="currency-toggle">
+            <button className={`currency-option ${currency==='USD'?'active':''}`} onClick={()=>setCurrency('USD')}>$ USD first</button>
+            <button className={`currency-option ${currency==='KES'?'active':''}`} onClick={()=>setCurrency('KES')}>KES first</button>
+          </div>
+        </div>
+        <div style={{background:'#f0fdf4',border:'1px solid #bbf7d0',borderRadius:'.75rem',padding:'.75rem 1rem',marginBottom:'1rem',fontSize:'.8rem',color:'#065f46'}}>
+          <strong>Preview:</strong> Products will show prices like → <strong>{currency==='USD'?'$24.99  /  KES 3,237':'KES 3,237  /  $24.99'}</strong>
+        </div>
+        <button onClick={()=>saveCurrency(currency)} className="btn btn-primary" style={{fontSize:'.85rem',padding:'.6rem 1.25rem'}}>
+          {currSaved
+            ? <><Icon name="check" style={{width:'15px',height:'15px'}}/>Saved &amp; Applied!</>
+            : <><Icon name="save" style={{width:'15px',height:'15px'}}/>Save Currency Setting</>}
+        </button>
+        <p style={{fontSize:'.75rem',color:'#9ca3af',marginTop:'.625rem'}}>Exchange rate: 1 USD = {USD_TO_KES} KES (fixed). Saved to cloud — works on any browser.</p>
+      </div>
+
+      {/* Payment */}
+      <div className="settings-card">
+        <h3><Icon name="credit-card" style={{width:'16px',height:'16px'}}/>Payment Link</h3>
+        <p style={{color:'#6b7280',fontSize:'.875rem',marginBottom:'.875rem'}}>The URL customers reach when they click "Proceed to Checkout".</p>
+        <input type="text" value={pay.draft.paymentLink} onChange={e=>pay.update('paymentLink',e.target.value)} className="form-input" placeholder="https://your-payment-gateway.com/pay"/>
+        {pay.draft.paymentLink&&<div style={{marginTop:'.5rem',display:'flex',alignItems:'center',gap:'.375rem',color:'#059669',fontSize:'.8rem'}}><Icon name="check-circle" style={{width:'14px',height:'14px'}}/>Link entered</div>}
+        <SaveBtn onClick={pay.save} saved={pay.saved}/>
+      </div>
+
+      {/* Contact */}
+      <div className="settings-card">
+        <h3><Icon name="phone" style={{width:'16px',height:'16px'}}/>Contact Information</h3>
+        <p style={{color:'#6b7280',fontSize:'.875rem',marginBottom:'.875rem'}}>Shown in the footer and used by the live chat widget.</p>
+        <div style={{display:'grid',gap:'.875rem'}}>
+          <div className="form-group" style={{marginBottom:0}}>
+            <label className="form-label">Phone Number</label>
+            <input type="text" value={contact.draft.phone} onChange={e=>contact.update('phone',e.target.value)} className="form-input" placeholder="+254 700 000 000"/>
+          </div>
+          <div className="form-group" style={{marginBottom:0}}>
+            <label className="form-label">Email Address</label>
+            <input type="email" value={contact.draft.email} onChange={e=>contact.update('email',e.target.value)} className="form-input" placeholder="hello@remedybloomy.com"/>
+          </div>
+          <div className="form-group" style={{marginBottom:0}}>
+            <label className="form-label">Physical Address</label>
+            <input type="text" value={contact.draft.address} onChange={e=>contact.update('address',e.target.value)} className="form-input" placeholder="Nairobi, Kenya"/>
+          </div>
+        </div>
+        <SaveBtn onClick={contact.save} saved={contact.saved}/>
+      </div>
+
+      {/* Social Media */}
+      <div className="settings-card">
+        <h3><Icon name="share-2" style={{width:'16px',height:'16px'}}/>Social Media Links</h3>
+        <p style={{color:'#6b7280',fontSize:'.875rem',marginBottom:'.875rem'}}>These appear as icons in the footer.</p>
+        <div style={{display:'grid',gap:'.75rem'}}>
+          {[['facebook','Facebook','https://facebook.com/yourpage'],['instagram','Instagram','https://instagram.com/yourhandle'],['twitter','Twitter / X','https://twitter.com/yourhandle'],['youtube','YouTube','https://youtube.com/@yourchannel'],['whatsapp','WhatsApp Number','+254700000000'],['tiktok','TikTok','https://tiktok.com/@yourhandle']].map(([key,label,ph])=>(
+            <div key={key} className="form-group" style={{marginBottom:0}}>
+              <label className="form-label">{label}</label>
+              <input type="text" value={social.draft[key]||''} onChange={e=>social.update(key,e.target.value)} className="form-input" placeholder={ph}/>
+            </div>
+          ))}
+        </div>
+        <SaveBtn onClick={social.save} saved={social.saved}/>
+      </div>
+
+      {/* Newsletter */}
+      <div className="settings-card">
+        <h3><Icon name="mail" style={{width:'16px',height:'16px'}}/>Newsletter Section</h3>
+        <div className="form-checkbox-group" style={{marginBottom:'.875rem'}}>
+          <input type="checkbox" id="nlEnabled" checked={nl.draft.enabled} onChange={e=>nl.update('enabled',e.target.checked)} className="form-checkbox"/>
+          <label htmlFor="nlEnabled" className="form-checkbox-label">Show newsletter signup on the store</label>
+        </div>
+        <div className="form-group" style={{marginBottom:'.75rem'}}>
+          <label className="form-label">Section Title</label>
+          <input type="text" value={nl.draft.title} onChange={e=>nl.update('title',e.target.value)} className="form-input"/>
+        </div>
+        <div className="form-group" style={{marginBottom:0}}>
+          <label className="form-label">Section Description</label>
+          <textarea value={nl.draft.description} onChange={e=>nl.update('description',e.target.value)} className="form-textarea" rows="2"/>
+        </div>
+        <SaveBtn onClick={nl.save} saved={nl.saved}/>
+      </div>
+
+      {/* Chat */}
+      <div className="settings-card">
+        <h3><Icon name="message-circle" style={{width:'16px',height:'16px'}}/>Live Chat Widget</h3>
+        <div className="form-checkbox-group" style={{marginBottom:'.875rem'}}>
+          <input type="checkbox" id="chatEnabled" checked={chat.draft.enabled} onChange={e=>chat.update('enabled',e.target.checked)} className="form-checkbox"/>
+          <label htmlFor="chatEnabled" className="form-checkbox-label">Show live chat button on the store</label>
+        </div>
+        <div className="form-group" style={{marginBottom:0}}>
+          <label className="form-label">Greeting Message</label>
+          <textarea value={chat.draft.greeting} onChange={e=>chat.update('greeting',e.target.value)} className="form-textarea" rows="2"/>
+        </div>
+        <SaveBtn onClick={chat.save} saved={chat.saved}/>
+      </div>
+
+      {/* API Keys */}
+      <div className="settings-card">
+        <h3><Icon name="key" style={{width:'16px',height:'16px'}}/>API Keys</h3>
+        <p style={{color:'#6b7280',fontSize:'.875rem',marginBottom:'1rem',lineHeight:'1.6'}}>
+          These keys power the AI newsletter writer and direct email sending. They are saved privately in your browser and never shared.
+        </p>
+        <div style={{display:'grid',gap:'1rem'}}>
+          <div className="form-group" style={{marginBottom:0}}>
+            <label className="form-label" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span>Anthropic API Key <span style={{fontWeight:'400',color:'#9ca3af'}}>(for AI newsletter drafts)</span></span>
+              <a href="https://console.anthropic.com/account/keys" target="_blank" rel="noopener noreferrer" style={{fontSize:'.75rem',color:'#059669',textDecoration:'none',display:'flex',alignItems:'center',gap:'.2rem'}}>
+                Get key <Icon name="external-link" style={{width:'11px',height:'11px'}}/>
+              </a>
+            </label>
+            <input type="password" value={apiK.draft.anthropicKey||''} onChange={e=>apiK.update('anthropicKey',e.target.value)} className="form-input" placeholder="sk-ant-…"/>
+            {apiK.draft.anthropicKey&&<p style={{fontSize:'.75rem',color:'#059669',marginTop:'.25rem',display:'flex',alignItems:'center',gap:'.25rem'}}><Icon name="check-circle" style={{width:'13px',height:'13px'}}/>Key entered</p>}
+          </div>
+          <div style={{borderTop:'1px dashed #e5e7eb',paddingTop:'1rem'}}>
+            <p style={{fontWeight:'600',color:'#374151',fontSize:'.85rem',marginBottom:'.625rem',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span>EmailJS <span style={{fontWeight:'400',color:'#9ca3af'}}>(for sending newsletters directly)</span></span>
+              <a href="https://emailjs.com" target="_blank" rel="noopener noreferrer" style={{fontSize:'.75rem',color:'#059669',textDecoration:'none',display:'flex',alignItems:'center',gap:'.2rem'}}>
+                Free account <Icon name="external-link" style={{width:'11px',height:'11px'}}/>
+              </a>
+            </p>
+            <div style={{display:'grid',gap:'.75rem'}}>
+              {[['ejsServiceId','Service ID','service_abc123'],['ejsTemplateId','Template ID','template_xyz789'],['ejsPublicKey','Public Key','your_public_key']].map(([k,label,ph])=>(
+                <div key={k} className="form-group" style={{marginBottom:0}}>
+                  <label className="form-label">{label}</label>
+                  <input type="password" value={apiK.draft[k]||''} onChange={e=>apiK.update(k,e.target.value)} className="form-input" placeholder={ph}/>
+                </div>
+              ))}
+            </div>
+            <p style={{fontSize:'.75rem',color:'#6b7280',marginTop:'.625rem',lineHeight:'1.6'}}>
+              In your EmailJS template, use variables: <code style={{background:'#f3f4f6',padding:'.1rem .3rem',borderRadius:'.25rem'}}>{'{{to_email}}'}</code> <code style={{background:'#f3f4f6',padding:'.1rem .3rem',borderRadius:'.25rem'}}>{'{{subject}}'}</code> <code style={{background:'#f3f4f6',padding:'.1rem .3rem',borderRadius:'.25rem'}}>{'{{message}}'}</code>
+            </p>
+          </div>
+        </div>
+        <SaveBtn onClick={apiK.save} saved={apiK.saved}/>
+      </div>
+
+      {/* Admin Password */}
+      <div className="settings-card">
+        <h3><Icon name="lock" style={{width:'16px',height:'16px'}}/>Admin Password</h3>
+        <p style={{color:'#6b7280',fontSize:'.875rem',marginBottom:'.875rem'}}>Change your secret admin access password.</p>
+        <AdminPasswordChange current={settings.adminPassword} onChange={pw=>onSave('adminPassword',pw)} showToast={showToast}/>
+      </div>
+    </div>
+  );
+}
+
+// ===== ADMIN PASSWORD CHANGE =====
+function AdminPasswordChange({current,onChange,showToast}) {
+  const [cur,setCur] = React.useState('');
+  const [nw,setNw] = React.useState('');
+  const [conf,setConf] = React.useState('');
+  const save = () => {
+    if(cur!==current){showToast('Current password is incorrect');return;}
+    if(nw.length<6){showToast('New password must be at least 6 characters');return;}
+    if(nw!==conf){showToast('Passwords do not match');return;}
+    onChange(nw); setCur(''); setNw(''); setConf(''); showToast('Password updated successfully');
+  };
+  return (
+    <div style={{display:'grid',gap:'.75rem'}}>
+      {[['Current Password',cur,setCur],['New Password',nw,setNw],['Confirm New Password',conf,setConf]].map(([l,v,sv])=>(
+        <div key={l}>
+          <label className="form-label">{l}</label>
+          <input type="password" value={v} onChange={e=>sv(e.target.value)} className="form-input" placeholder="••••••••"/>
+        </div>
+      ))}
+      <button onClick={save} className="btn btn-primary" style={{width:'fit-content'}}><Icon name="save" style={{width:'16px',height:'16px'}}/>Save Password</button>
+    </div>
+  );
+}
+
+// ===== PRODUCT FORM =====
+function ProductForm({product,categories,onSave,onCancel}) {
+  const [f,setF] = React.useState({
+    name:product?.name||'',category:product?.category||(categories[0]||''),
+    price:product?.price||'',image:product?.image||'',description:product?.description||'',
+    uses:product?.uses||'',diseasesTreated:product?.diseasesTreated||'',
+    featured:product?.featured||false,rating:product?.rating||4.5
+  });
+  const submit = e => { e.preventDefault(); onSave({...f,price:parseFloat(f.price),rating:parseFloat(f.rating)}); };
+  return (
+    <div className="modal-overlay">
+      <div className="modal-backdrop" onClick={onCancel}/>
+      <div className="modal-content scrollbar-hide">
+        <div className="modal-header">
+          <h2 className="modal-title">{product?'Edit Product':'Add Product'}</h2>
+          <button onClick={onCancel} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'22px',height:'22px'}}/></button>
+        </div>
+        <form onSubmit={submit} className="modal-body">
+          <div className="form-group"><label className="form-label">Product Name</label><input type="text" required value={f.name} onChange={e=>setF({...f,name:e.target.value})} className="form-input" placeholder="e.g., Lavender Essential Oil"/></div>
+          <div className="form-group"><label className="form-label">Category</label><select value={f.category} onChange={e=>setF({...f,category:e.target.value})} className="form-select">{categories.map(c=><option key={c}>{c}</option>)}</select></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
+            <div className="form-group"><label className="form-label">Price (USD)</label><input type="number" required step="0.01" min="0" value={f.price} onChange={e=>setF({...f,price:e.target.value})} className="form-input" placeholder="24.99"/></div>
+            <div className="form-group"><label className="form-label">Rating (0–5)</label><input type="number" required step="0.1" min="0" max="5" value={f.rating} onChange={e=>setF({...f,rating:e.target.value})} className="form-input" placeholder="4.8"/></div>
+          </div>
+          <div className="form-group"><label className="form-label">Image URL</label><input type="text" required value={f.image} onChange={e=>setF({...f,image:e.target.value})} className="form-input" placeholder="https://images.unsplash.com/..."/>{f.image&&<img src={f.image} alt="Preview" className="image-preview" onError={e=>e.target.style.display='none'}/>}</div>
+          <div className="form-group"><label className="form-label">Description</label><textarea required value={f.description} onChange={e=>setF({...f,description:e.target.value})} rows="2" className="form-textarea" placeholder="Short product description..."/></div>
+          <div className="form-group"><label className="form-label">How to Use</label><textarea value={f.uses} onChange={e=>setF({...f,uses:e.target.value})} rows="2" className="form-textarea" placeholder="Dosage and application instructions..."/></div>
+          <div className="form-group"><label className="form-label">Conditions / Diseases Treated <span style={{color:'#9ca3af',fontWeight:'400'}}>(comma-separated)</span></label><input type="text" value={f.diseasesTreated} onChange={e=>setF({...f,diseasesTreated:e.target.value})} className="form-input" placeholder="Anxiety, Insomnia, Stress, Headaches"/></div>
+          <div className="form-checkbox-group"><input type="checkbox" id="feat" checked={f.featured} onChange={e=>setF({...f,featured:e.target.checked})} className="form-checkbox"/><label htmlFor="feat" className="form-checkbox-label">Mark as Featured Product</label></div>
+          <div className="form-actions">
+            <button type="button" onClick={onCancel} className="btn btn-secondary" style={{flex:1}}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{flex:1}}>{product?'Update':'Add'} Product</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ===== BLOG FORM =====
+function BlogForm({blog,onSave,onCancel}) {
+  const [f,setF] = React.useState({title:blog?.title||'',excerpt:blog?.excerpt||'',content:blog?.content||'',image:blog?.image||'',author:blog?.author||'RemedyBloomy Team',date:blog?.date||new Date().toISOString().split('T')[0],id:blog?.id||null});
+  const submit = e => { e.preventDefault(); onSave(f); };
+  return (
+    <div className="modal-overlay">
+      <div className="modal-backdrop" onClick={onCancel}/>
+      <div className="modal-content scrollbar-hide" style={{maxWidth:'52rem'}}>
+        <div className="modal-header">
+          <h2 className="modal-title">{blog?'Edit Post':'New Blog Post'}</h2>
+          <button onClick={onCancel} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'22px',height:'22px'}}/></button>
+        </div>
+        <form onSubmit={submit} className="modal-body">
+          <div className="form-group"><label className="form-label">Post Title</label><input type="text" required value={f.title} onChange={e=>setF({...f,title:e.target.value})} className="form-input" placeholder="e.g., Benefits of Turmeric"/></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
+            <div className="form-group"><label className="form-label">Author</label><input type="text" required value={f.author} onChange={e=>setF({...f,author:e.target.value})} className="form-input"/></div>
+            <div className="form-group"><label className="form-label">Publish Date</label><input type="date" required value={f.date} onChange={e=>setF({...f,date:e.target.value})} className="form-input"/></div>
+          </div>
+          <div className="form-group"><label className="form-label">Cover Image URL</label><input type="text" value={f.image} onChange={e=>setF({...f,image:e.target.value})} className="form-input" placeholder="https://images.unsplash.com/..."/>{f.image&&<img src={f.image} alt="Preview" style={{marginTop:'.625rem',width:'100%',height:'8rem',objectFit:'cover',borderRadius:'.5rem'}} onError={e=>e.target.style.display='none'}/>}</div>
+          <div className="form-group"><label className="form-label">Excerpt <span style={{color:'#9ca3af',fontWeight:'400'}}>(shown on blog listing)</span></label><textarea required value={f.excerpt} onChange={e=>setF({...f,excerpt:e.target.value})} rows="2" className="form-textarea" placeholder="A short teaser shown on the blog page..."/></div>
+          <div className="form-group"><label className="form-label">Full Content <span style={{color:'#9ca3af',fontWeight:'400'}}>(shown after Read More)</span></label><textarea required value={f.content} onChange={e=>setF({...f,content:e.target.value})} rows="10" className="form-textarea" placeholder="Write the full article here..."/></div>
+          <div className="form-actions">
+            <button type="button" onClick={onCancel} className="btn btn-secondary" style={{flex:1}}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{flex:1}}>{blog?'Update Post':'Publish Post'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ===== VIDEO FORM =====
+function VideoForm({video,onSave,onCancel}) {
+  const [f,setF] = React.useState({title:video?.title||'',description:video?.description||'',url:video?.url||'',featured:video?.featured||false,date:video?.date||new Date().toISOString().split('T')[0],id:video?.id||null});
+  const submit = e => { e.preventDefault(); onSave(f); };
+  const preview = extractVideo(f.url);
+  return (
+    <div className="modal-overlay">
+      <div className="modal-backdrop" onClick={onCancel}/>
+      <div className="modal-content scrollbar-hide">
+        <div className="modal-header">
+          <h2 className="modal-title">{video?'Edit Video':'Add Video'}</h2>
+          <button onClick={onCancel} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'22px',height:'22px'}}/></button>
+        </div>
+        <form onSubmit={submit} className="modal-body">
+          <div className="form-group"><label className="form-label">Video Title</label><input type="text" required value={f.title} onChange={e=>setF({...f,title:e.target.value})} className="form-input" placeholder="e.g., Benefits of Lavender Oil"/></div>
+          <div className="form-group">
+            <label className="form-label">Video URL <span style={{color:'#9ca3af',fontWeight:'400'}}>(YouTube, Vimeo, or direct .mp4)</span></label>
+            <input type="text" required value={f.url} onChange={e=>setF({...f,url:e.target.value})} className="form-input" placeholder="https://www.youtube.com/watch?v=..."/>
+            {preview?.thumb&&<img src={preview.thumb} alt="thumb" style={{marginTop:'.625rem',width:'12rem',height:'7rem',objectFit:'cover',borderRadius:'.5rem'}}/>}
+            {f.url&&!preview&&<p style={{color:'#f59e0b',fontSize:'.8rem',marginTop:'.375rem'}}>⚠ Could not detect video format. Check the URL.</p>}
+          </div>
+          <div className="form-group"><label className="form-label">Description</label><textarea value={f.description} onChange={e=>setF({...f,description:e.target.value})} rows="2" className="form-textarea" placeholder="Brief description of the video content..."/></div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
+            <div className="form-group"><label className="form-label">Date</label><input type="date" value={f.date} onChange={e=>setF({...f,date:e.target.value})} className="form-input"/></div>
+          </div>
+          <div className="form-checkbox-group"><input type="checkbox" id="vfeat" checked={f.featured} onChange={e=>setF({...f,featured:e.target.checked})} className="form-checkbox"/><label htmlFor="vfeat" className="form-checkbox-label">Mark as Featured Video</label></div>
+          <div className="form-actions">
+            <button type="button" onClick={onCancel} className="btn btn-secondary" style={{flex:1}}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{flex:1}}>{video?'Update':'Add'} Video</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ===== TESTIMONIAL FORM =====
+function TestimonialForm({testi,onSave,onCancel}) {
+  const [f,setF] = React.useState({name:testi?.name||'',location:testi?.location||'',rating:testi?.rating||5,text:testi?.text||'',photo:testi?.photo||'',date:testi?.date||new Date().toISOString().split('T')[0],id:testi?.id||null});
+  const submit = e => { e.preventDefault(); onSave({...f,rating:parseInt(f.rating)}); };
+  return (
+    <div className="modal-overlay">
+      <div className="modal-backdrop" onClick={onCancel}/>
+      <div className="modal-content scrollbar-hide">
+        <div className="modal-header">
+          <h2 className="modal-title">{testi?'Edit Testimonial':'Add Testimonial'}</h2>
+          <button onClick={onCancel} style={{background:'none',border:'none',padding:'.5rem',cursor:'pointer'}}><Icon name="x" style={{width:'22px',height:'22px'}}/></button>
+        </div>
+        <form onSubmit={submit} className="modal-body">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
+            <div className="form-group"><label className="form-label">Customer Name</label><input type="text" required value={f.name} onChange={e=>setF({...f,name:e.target.value})} className="form-input" placeholder="e.g., Sarah K."/></div>
+            <div className="form-group"><label className="form-label">Location</label><input type="text" value={f.location} onChange={e=>setF({...f,location:e.target.value})} className="form-input" placeholder="e.g., Nairobi, Kenya"/></div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
+            <div className="form-group">
+              <label className="form-label">Rating (1–5)</label>
+              <select value={f.rating} onChange={e=>setF({...f,rating:e.target.value})} className="form-select">
+                {[5,4,3,2,1].map(n=><option key={n} value={n}>{'★'.repeat(n)} ({n} stars)</option>)}
+              </select>
+            </div>
+            <div className="form-group"><label className="form-label">Date</label><input type="date" value={f.date} onChange={e=>setF({...f,date:e.target.value})} className="form-input"/></div>
+          </div>
+          <div className="form-group"><label className="form-label">Review Text</label><textarea required value={f.text} onChange={e=>setF({...f,text:e.target.value})} rows="3" className="form-textarea" placeholder="What did the customer say..."/></div>
+          <div className="form-group"><label className="form-label">Photo URL <span style={{color:'#9ca3af',fontWeight:'400'}}>(optional)</span></label><input type="text" value={f.photo} onChange={e=>setF({...f,photo:e.target.value})} className="form-input" placeholder="https://..."/></div>
+          <div className="form-actions">
+            <button type="button" onClick={onCancel} className="btn btn-secondary" style={{flex:1}}>Cancel</button>
+            <button type="submit" className="btn btn-primary" style={{flex:1}}>{testi?'Update':'Add'} Testimonial</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
